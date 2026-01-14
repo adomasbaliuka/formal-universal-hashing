@@ -1,4 +1,4 @@
-# Definitions and theorems about universal hashing in LEAN4
+# Universal hashing in LEAN4
 
 This is a work in progress which should eventually be merged into [formal-qkd](https://github.com/adomasbaliuka/formal-qkd).
 
