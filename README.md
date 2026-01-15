@@ -20,6 +20,10 @@ Such functions can be used in hash tables, randomized algorithms and various cry
 Definitions of universal hashing and related properties are not always consistent across the literature.
 This repository aims to provide definitions and theorems about universal hashing  
 
+# Documentation
+
+See [Preliminary, auto-generated API-docs](https://adomasbaliuka.github.io/formal-universal-hashing/docs/)
+
 # Roadmap
 
 - [ ] Definitions of universal hashing
