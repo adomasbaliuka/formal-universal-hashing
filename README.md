@@ -1,6 +1,7 @@
 # Universal hashing in LEAN4
+[![Lean Action CI](https://github.com/adomasbaliuka/formal-universal-hashing/actions/workflows/lean_action_ci.yml/badge.svg)](https://github.com/adomasbaliuka/formal-universal-hashing/actions/workflows/lean_action_ci.yml)
 
-This is a work in progress which should eventually be merged into [formal-qkd](https://github.com/adomasbaliuka/formal-qkd).
+This is a work in progress which may be merged into or become a dependency for [formal-qkd](https://github.com/adomasbaliuka/formal-qkd).
 
 Contributions are very welcome!
 
