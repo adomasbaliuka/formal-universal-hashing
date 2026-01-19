@@ -14,7 +14,7 @@ end MatMulExample
 
 section Example_2x3
 
-/-- The most general 2x3 Toeplitz matrix -/
+/-- The most general binary 2x3 Toeplitz matrix -/
 def Toeplitz2x3 (t1 t2 t3 t4 : ZMod 2) : Matrix (Fin 2) (Fin 3) (ZMod 2) :=
     !![
         t1, t3, t4;
