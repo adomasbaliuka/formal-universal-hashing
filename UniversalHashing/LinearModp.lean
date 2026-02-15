@@ -8,13 +8,17 @@ import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Data.Rat.Star
 import UniversalHashing.Basic
 
+
+set_option relaxedAutoImplicit false
+set_option autoImplicit false
+
 section LinearFamily
 
 variable (p : ℕ) [Fact p.Prime]
 
 /-- Index type: pairs (a, b) in (ZMod p)² with a ≠ 0. -/
 abbrev LinearIndex : Type :=
-  { ab : (ZMod p) × (ZMod p) // ab.1 ≠ 0 }
+  {ab : (ZMod p) × (ZMod p) // ab.1 ≠ 0}
 
 instance inst_fintypeLinearIndex : Fintype (LinearIndex p) := by
   unfold LinearIndex
@@ -62,41 +66,38 @@ def generalLinearHashFamily (a : Nat) :
 /- Universality of the `linearHashFamily` -/
 theorem linearHashFamily.universal2 :
     (linearHashFamily p).universal2 := by
-  refine fun x y hxy => ?_;
+  refine fun x y hxy => ?_
   -- The set of pairs (a, b) where a * x + b = a * y + b is exactly the set where a = 0.
   have h_set : {i : LinearIndex p | linearHashFamily p i x = linearHashFamily p i y}
         = {i : LinearIndex p | i.val.1 * (x - y) = 0} := by
-    simp  [mul_sub, sub_eq_zero, linearHashFamily]
-  simp_all [Set.ext_iff]
-  simp_all [sub_eq_zero]
-  unfold probUniform
-  simp_all only [Fintype.card_eq_zero, CharP.cast_eq_zero, Fintype.card_subtype_compl,
-    Fintype.card_prod, ZMod.card, zero_div, inv_nonneg, Nat.cast_nonneg]
+    simp [mul_sub, sub_eq_zero, linearHashFamily]
+  simp_all only [ne_eq, mul_eq_zero, sub_eq_zero, or_false, Set.ext_iff, Set.mem_setOf_eq,
+    Subtype.forall, iff_false, Prod.forall, Set.setOf_false, Fintype.card_eq_zero, ZMod.card,
+    zero_mul, Fintype.card_subtype_compl, Fintype.card_prod, zero_le]
 
 /- Universality of the `generalLinearHashFamily`, where inputs can be restricted. -/
 theorem generalLinearHashFamily.universal2 {a : Nat} (alep : a ≤ p) :
     (generalLinearHashFamily p a).universal2 := by
-  -- Let's choose any two distinct inputs, say x and y.
+  have := linearHashFamily.universal2 p
   intro x y hxy
-  by_contra h_contra
-  -- Since $x \neq y$, we have $x \neq y$ in $\mathbb{Z}/p\mathbb{Z}$.
-  have hxy_ne : (x.val : ZMod p) ≠ (y.val : ZMod p) := by
-    simp_all [Fin.ext_iff, ZMod.natCast_eq_natCast_iff']
-    rw [Nat.mod_eq_of_lt, Nat.mod_eq_of_lt] <;> omega
-  refine h_contra ?_
-  convert ( linearHashFamily.universal2 p ) hxy_ne using 1
+  convert this x y (show (x : ZMod p) ≠ y from ?_) using 1
+  simp_all only [ne_eq, Fin.ext_iff, ZMod.natCast_eq_natCast_iff']
+  rw [Nat.mod_eq_of_lt, Nat.mod_eq_of_lt]
+  <;> contrapose! hxy <;> linarith [Fin.is_lt x, Fin.is_lt y]
 
 /- Counterexample: `linearHashFamily` is NOT strongly universal.
 Proof by explicit computation for ``p = 2``.
 -/
-example : ¬ (linearHashFamily 2).stronglyUniversal := by
-  simp [linearHashFamily, HashFamily.stronglyUniversal]
-  simp [probUniform]
+example : ¬ (linearHashFamily 2).stronglyUniversal2 := by
+  unfold HashFamily.stronglyUniversal2 linearHashFamily
+  push_neg
   use 3, 4
   constructor
   · decide
   · use 1, 2
-    rw [show Fintype.card { x : ZMod 2 × ZMod 2 // x.1 = 0 } = 2 by decide]
+    simp only [ne_eq, Fintype.card_subtype_compl, Fintype.card_prod, ZMod.card, Nat.reduceMul,
+      Nat.cast_ofNat]
+    rw [show Fintype.card {x : ZMod 2 × ZMod 2 // x.1 = 0} = 2 by decide]
     simp only [Nat.reduceSub, Nat.cast_ofNat]
     have : Fintype.card { i : LinearIndex 2
       // i.val.1 * 3 + i.val.2 = 1 ∧ i.val.1 * 4 + i.val.2 = 2 } = 1 := by decide
