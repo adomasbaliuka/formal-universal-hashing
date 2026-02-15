@@ -38,18 +38,20 @@ The type of binary Toeplitz matrices, equipped with a Fintype instance.
 -/
 def BinToeplitzMatrix (m n : ℕ) := ToeplitzMatrix m n (ZMod 2)
 
-open scoped Classical in
-noncomputable instance inst_Fintype_BinToeplitzMatrix {m n : ℕ} : Fintype (BinToeplitzMatrix m n) :=
-  Subtype.fintype _
+/- Note: do not use for computing cardinality, use `BinToeplitzMatrix.equiv_params` instead. -/
+instance inst_Fintype_BinToeplitzMatrix {m n : ℕ} : Fintype (BinToeplitzMatrix m n) := by
+  unfold BinToeplitzMatrix ToeplitzMatrix Matrix.IsToeplitz
+  infer_instance
 
-/- This binary matrix is Toeplitz. -/
+/- The binary matrix ``\begin{pmatrix}  1 & 0 \\ 1 & 1 \end{pmatrix}`` is Toeplitz. -/
 example : !![(1 : ZMod 2), 0;
               1,           1].IsToeplitz := by
   intro i j
   fin_cases i <;> fin_cases j
   repeat simp_all
 
-/- This binary matrix is NOT Toeplitz because the main diagonal is not constant.-/
+/- The binary matrix ``\begin{pmatrix}  0 & 1 \\ 1 & 1 \end{pmatrix}`` is NOT Toeplitz
+ because the main diagonal is not constant.-/
 example : ¬ !![(0 : ZMod 2), 1;
                 1,           1].IsToeplitz := by
   intro h
@@ -456,6 +458,5 @@ theorem toeplitz_mulVec_isUniversal2 {m n : ℕ} [NeZero m] (mlen : m ≤ n) :
         false_and, not_false_eq_true, mul_div_cancel_left₀, le_refl]
   rw [Nat.le_div_iff_mul_le] at h_card <;> norm_num [Fintype.card_pi] at *
   simp_all [sub_eq_iff_eq_add, Matrix.mulVec_sub]
-  grind
 
 end

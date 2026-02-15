@@ -1,3 +1,7 @@
+/-
+Examples illustrating definitions elsewhere,
+to ease understanding and make definitions more concrete
+-/
 import UniversalHashing.Toeplitz
 import UniversalHashing.Basic
 
@@ -38,3 +42,6 @@ example :
   refine toeplitz_mulVec_isUniversal2 (show 2 ≤ 3 from Nat.AtLeastTwo.prop)
 
 end Example_2x3
+
+section ProbabilityExample
+

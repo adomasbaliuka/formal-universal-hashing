@@ -1,9 +1,8 @@
 /-
-This module defines Universal-2 hash functions.
+Proof that Binary Matrix-vector multiplication (using all matrices) is a Universal-2 hash function:
+`matrix_mulVec_isUniversal2`
 
-A function `hash : Seed → Input → Output` is Universal-2 if for any distinct inputs `x` and `y`,
-the probability over a uniform random seed that `hash s x = hash s y` is at most `1 / |Output|`.
-This is formalized as `(number of seeds causing collision) * |Output| ≤ |Seed|`.
+(This family is very big and therefore not useful in practice)
 -/
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Ring
@@ -17,7 +16,6 @@ import Mathlib.Algebra.Group.Pointwise.Finset.Basic
 
 import UniversalHashing.Basic
 
-
 /-
 There are `2 ^ (n^2)` square binary matrices.
 -/
@@ -28,6 +26,7 @@ lemma h_card_matrices (n : ℕ) : Fintype.card (Matrix (Fin n) (Fin n) (ZMod 2))
 
 /-
 Binary Matrix-vector multiplication (using all matrices) is a Universal-2 hash function.
+TODO simplify proof, partially AI generated.
 -/
 lemma matrix_mulVec_isUniversal2 (n : ℕ) :
     IsUniversal2 (fun (M : Matrix (Fin n) (Fin n) (ZMod 2)) (v : Fin n → ZMod 2)
