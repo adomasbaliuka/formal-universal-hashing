@@ -1,3 +1,5 @@
 import UniversalHashing.Basic
+import UniversalHashing.Matrix
 import UniversalHashing.Toeplitz
-import UniversalHashing.Examples
+import UniversalHashing.LinearModp
+import UniversalHashing.AllFunctions

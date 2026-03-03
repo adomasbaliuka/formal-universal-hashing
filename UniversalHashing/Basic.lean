@@ -1,14 +1,32 @@
 /-
-This module defines Universal-2 hash functions.
+This module defines notions of universality for families of hash functions.
+
+A **hash family** is a family of functions `Input → Output`.
+Rather than define it as a set of functions, we put the choice of function into a type `Seed`.
+
+## Universal-2
 
 A function `hash : Seed → Input → Output` is Universal-2 if for any distinct inputs `x` and `y`,
 the probability over a uniform random seed that `hash s x = hash s y` is at most `1 / |Output|`.
+
 This is formalized as `(number of seeds causing collision) * |Output| ≤ |Seed|`.
+
+We also give an alternative definition, proven equivalent, which the AIs seem to like more.
+Let's see which we keep in the end...
+
+## Strongly-universal-n
+
+A family H is strongly universal (also known as ``pairwise independent'') if
+  for all ``x ≠ y`` and all ``a b : Output``,
+    ``\Pr_i [h_i(x) = a ∧ h_i(y) = b] = 1 / |Output|^2``
+
 -/
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Ring
+import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Algebra.Field.ZMod
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.LinearAlgebra.Matrix.Defs
 import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Fintype.Card
@@ -17,124 +35,248 @@ import Mathlib.Algebra.Group.Pointwise.Finset.Basic
 
 
 set_option synthInstance.maxSize 128
-
 set_option relaxedAutoImplicit false
 set_option autoImplicit false
 
-noncomputable section
 
-variable {Seed Input Output : Type*} [Fintype Seed] [Fintype Input] [Fintype Output]
+/--
+A **hash family** is a family of functions `Input → Output`.
+Rather than define it as a set of functions, we put the choice of function into a type `Seed`.
+-/
+abbrev HashFamily (Seed Input Output : Type*) : Type _ :=
+  Seed → Input → Output
 
-open Classical in
+/-- We are considering cases with finitely many hash functions.
+
+In terms of definitions, if all types are `Fintype`
+and both `Seed` and `Input` have decidable equality,
+then the hash family type is also a `Fintype`. -/
+instance inst_Fintype_HashFamily (Seed Input Output : Type*)
+    [Fintype Seed] [DecidableEq Seed] [DecidableEq Input] [Fintype Input] [Fintype Output] :
+    Fintype (HashFamily Seed Input Output) :=
+  ⟨Fintype.piFinset fun _ => Finset.univ, by simp⟩
+
+section SeedInputOutput
+
+-- In useful cases, these will *all* have instances `Fintype` and `DecidableEq`.
+-- However, many theorems don't need those and I'd rather not use `omit` to silence linters.
+variable {Seed Input Output : Type*}
+  [Fintype Seed] [Fintype Output]
+  [DecidableEq Output]
+
 /-
 A hash function taking a seed and an input is universal-2 if
 for any distinct inputs x and y, the probability (over the seed) of a collision
 is at most 1/|Output|.
 This is expressed as: (number of seeds causing collision) * |Output| <= |Seed|.
 -/
-def IsUniversal2 (hash : Seed → Input → Output) : Prop :=
+def HashFamily.universal2 (hash : HashFamily Seed Input Output) : Prop :=
   ∀ (x y : Input), x ≠ y →
-    (Finset.univ.filter (fun s => hash s x = hash s y)).card * Fintype.card Output
+    Fintype.card {s : Seed | hash s x = hash s y} * Fintype.card Output
     ≤ Fintype.card Seed
 
+theorem HashFamily.universal2_of_seed_empty (hash : HashFamily Seed Input Output) [IsEmpty Seed] :
+    hash.universal2 := by
+  unfold HashFamily.universal2
+  simp_all only [ne_eq, Set.coe_setOf, Fintype.card_eq_zero, zero_mul, le_refl, implies_true]
+
+/-- The uniform probability of a predicate on `Seed`, modeled by counting. -/
+def probUniform (p : Seed → Prop) [DecidablePred p] : ℚ :=
+  (Fintype.card {i : Seed // p i}) / (Fintype.card Seed)
+
 /-
-The evaluation function `fun s i => s i` where the seed is a function `Input -> Output`
-is a universal-2 hash function.
+  Alternative (equivalent) statement of universal-2 using `probUniform`.
+
+  A family H is universal2 if for all distinct x ≠ y,
+  the collision probability is at most 1 / |Output|:
+
+    ``Pr_i [h_i(x) = h_i(y)] ≤ 1 / |Output|``
 -/
-example [DecidableEq Input] [DecidableEq Output] :
-    IsUniversal2 (fun (s : Input → Output) (i : Input) => s i) := by
+theorem HashFamily.universal2_iff_probUniform (H : HashFamily Seed Input Output) :
+    H.universal2
+    ↔
+    ∀ ⦃x y : Input⦄, x ≠ y →
+    probUniform (fun i => H i x = H i y) ≤ (1 : ℚ) / (Fintype.card Output)
+    := by
+  simp only [ne_eq, probUniform, one_div]
+  field_simp [mul_comm, mul_assoc, mul_left_comm]
+  constructor <;> intro h x y hxy
+  · have h_div : (Fintype.card {i : Seed // H i x = H i y}) * Fintype.card Output
+        ≤ Fintype.card Seed := by
+      convert h x y hxy using 1
+    by_cases hOutput : Fintype.card Output = 0
+      <;> by_cases hSeed : Fintype.card Seed = 0 <;> simp_all
+    · simp_all [Fintype.card_eq_zero_iff ]
+      exact False.elim <| hOutput.elim <| H hSeed.some x
+    · field_simp
+      norm_cast
+  · contrapose! h
+    use x, y, hxy
+    rw [div_lt_div_iff₀ ] <;> norm_cast <;> norm_num [Fintype.card_subtype ] at *
+    · convert h using 1
+    · exact Nat.pos_of_ne_zero ( by
+      simp_all only [ne_eq]
+      apply Aesop.BuiltinRules.not_intro
+      intro a
+      simp_all only [mul_zero, not_lt_zero'] )
+    · exact Fintype.card_pos_iff.mpr ⟨Classical.choose (Finset.card_pos.mp (by nlinarith))⟩
+
+/-
+A hash family is **strongly-universal-n** (also called "n-wise independent") if
+- given `n` distinct inputs `a₁, a₂, ...`
+- and n (not necessarily distinct) outputs `b₁, b₂, ...`,
+exactly ``|HashFamily|/(|Output|^n)`` functions take `a₁` to `b₁` `a₂` to `b₂`, etc.
+
+See [Wegman, Carter 1981](https://doi.org/10.1016/0022-0000(81)90033-7)
+-/
+def HashFamily.stronglyUniversal_n (n : ℕ) (H : HashFamily Seed Input Output) : Prop :=
+  ∀ ⦃a : Fin n → Input⦄, a.Injective -- for n distinct Inputs `a₁, a₂, ...`
+  →  ∀ (b : Fin n → Output), -- and n (not necessarily distinct) outputs `b₁, b₂, ...`,
+  -- `|H|/(|B|^n)` functions take `a₁` to `b₁`, `a₂` to `b₂`, etc.
+    Fintype.card {i : Seed // ∀ (j : Fin n), H i (a j) = b j }
+      = (Fintype.card Seed : ℚ) / ((Fintype.card Output) ^ n : ℚ)
+
+/-
+Special case: a family H is **strongly-universal-2**
+(also known as just "strongly universal", or "pairwise independent") if
+  for all ``x ≠ y`` and all ``a b : Output``,
+    ``\Pr_i [h_i(x) = a ∧ h_i(y) = b] = 1 / |Output|^2``.
+-/
+def HashFamily.stronglyUniversal2 (H : HashFamily Seed Input Output) : Prop :=
+  ∀ ⦃x y : Input⦄, x ≠ y →
+  ∀ a b : Output,
+    Fintype.card {i : Seed // H i x = a ∧ H i y = b}
+      = ((Fintype.card Seed) : ℚ) / (Fintype.card Output : ℚ)^2
+
+/-
+  Equivalent statement of strongly-universal-2 using `probUniform`.
+
+  A family H is `stronglyUniversal2` if for all distinct x ≠ y, given two outputs a and b,
+  the probability to map `x ↦ a` and `y ↦ b` is exactly `1 / (|Output|^2)`.
+-/
+theorem HashFamily.stronglyUniversal2_iff_probUniform_of_inhabited [Nonempty Seed]
+    (H : HashFamily Seed Input Output) :
+    H.stronglyUniversal2
+    ↔
+    ∀ ⦃x y : Input⦄, x ≠ y →
+    ∀ a b : Output,
+      probUniform (fun i => H i x = a ∧ H i y = b)
+        = 1 / ((Fintype.card Output : ℚ)^2) := by
+  unfold HashFamily.stronglyUniversal2
+  have : (Fintype.card Seed : ℚ) ≠ 0 := by
+    simp only [ne_eq, Nat.cast_eq_zero, Fintype.card_eq_zero_iff]
+    exact not_isEmpty_of_nonempty Seed
+  constructor <;> intro h x y hxy a b <;> specialize h hxy a b
+  · rw [probUniform, h]
+    field_simp
+  · rw [probUniform] at h
+    field_simp at h
+    exact h
+
+/- `stronglyUniversal2` is a special case of `strongly_universal_n` for `n = 2`. -/
+theorem HashFamily.stronglyUniversal2_stronglyUniversal_n_2
+    [Inhabited Seed] (H : HashFamily Seed Input Output) :
+    H.stronglyUniversal2 ↔ H.stronglyUniversal_n 2 := by
+  unfold stronglyUniversal2 stronglyUniversal_n
+  have h : Fintype.card Seed ≠ 0 := by
+    simp_all only [ne_eq, Fintype.card_ne_zero, not_false_eq_true]
+  constructor
+  · intro h a ainj b
+    have : a 0 ≠ a 1 := by
+      simp_all only [ne_eq, Fin.forall_fin_two, Fin.isValue, zero_ne_one, imp_false,
+        not_false_eq_true, Function.Injective]
+    have := h this (b 0) (b 1)
+    field_simp at this
+    convert this
+    simp_all only [ne_eq, Fin.isValue, Fin.forall_fin_two]
+  · intro h a b neq A B
+    let as : Fin 2 → Input
+    | 0 => a
+    | 1 => b
+    have : as.Injective := by
+      unfold as Function.Injective
+      grind only
+    let Os : Fin 2 → Output
+    | 0 => A
+    | 1 => B
+    have := h this Os
+    field_simp
+    convert this
+    simp_all only [ne_eq, Fin.forall_fin_two, Fin.isValue, as, Os]
+
+/- `stronglyUniversal2` implies `universal2`. -/
+theorem HashFamily.universal2_of_stronglyUniversal2 [DecidableEq Seed]
+    (H : HashFamily Seed Input Output) :
+    H.stronglyUniversal2 → H.universal2 := by
+  intro h
+  wlog seedNonempty : Fintype.card Seed ≠ 0
+  · have : IsEmpty Seed := Fintype.card_eq_zero_iff.mp (Function.notMem_support.mp seedNonempty)
+    exact HashFamily.universal2_of_seed_empty H
+  convert (HashFamily.universal2_iff_probUniform H).mpr _
   intro x y hxy
-  simp only [Fintype.card_pi, Finset.prod_const, Finset.card_univ]
-  -- Let's count the number of functions $s : Input \to Output$ such that $s(x) = s(y)$.
-  have h_count : (Finset.univ.filter (fun s : Input → Output => s x = s y)).card
-                  ≤ Fintype.card Output ^ (Fintype.card Input - 1) := by
-    have h_count : (Finset.univ.filter (fun s : Input → Output => s x = s y)).card
-                    ≤ Finset.card (Finset.image (
-                        fun s : Input → Output => fun i => if i = x then s y else s i)
-                        (Finset.univ : Finset (Input → Output))) := by
-      apply Finset.card_le_card
-      intro s hs
-      simp_all only [ne_eq, Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_image]
-      use s
-      ext x_1
-      simp_all only [ite_eq_right_iff, implies_true]
-    set im := Finset.image ( fun s : { i : Input // i ≠ x } → Output
-            => fun i => if h : i = x then s ⟨y, by tauto ⟩ else s ⟨ i, by tauto⟩ ) Finset.univ
-            with him
-    refine le_trans h_count ( le_trans
-        ( Finset.card_le_card (t:=im) <| Finset.image_subset_iff.mpr ?_a ) ?_bb )
-    · simp only [Finset.mem_univ, him, ne_eq, Finset.mem_image, true_and, forall_const]
-      exact fun s => ⟨fun i => s i, by aesop⟩
-    · exact Finset.card_image_le.trans ( by simp only [ne_eq, Finset.card_univ, Fintype.card_pi,
-      Finset.prod_const, Fintype.card_subtype_compl, Fintype.card_unique, le_refl] )
-  convert Nat.mul_le_mul_right _ h_count using 1
-  · convert rfl
-  · rw [← pow_succ, Nat.sub_add_cancel ( Fintype.card_pos_iff.mpr ⟨ x ⟩ )]
-
+  have : Nonempty Seed := Fintype.card_pos_iff.mp (Nat.zero_lt_of_ne_zero seedNonempty)
+  have h_prob : ∀ a : Output,
+    probUniform (fun i => H i x = a ∧ H i y = a) = 1 / (Fintype.card Output : ℚ)^2 :=
+      fun a ↦ H.stronglyUniversal2_iff_probUniform_of_inhabited.mp h hxy a a
+  have h_sum :
+      probUniform (fun i => H i x = H i y)
+      = ∑ a : Output, probUniform (fun i => H i x = a ∧ H i y = a) := by
+    simp only [Fintype.card_subtype, probUniform]
+    rw [← Finset.sum_div _ _ _, eq_comm]
+    rw [← Nat.cast_sum, ← Finset.card_biUnion]
+    · congr
+      ext
+      simp_all only [ne_eq, Fintype.card_ne_zero, not_false_eq_true, one_div, Finset.mem_biUnion,
+        Finset.mem_univ, Finset.mem_filter, true_and, exists_eq_left']
+      constructor <;> intros <;> simp_all only
+    · intro a _ b _ hab
+      exact Finset.disjoint_left.mpr fun i hi₁ hi₂ => hab <| by aesop
+  by_cases h : Fintype.card Output = 0 <;> simp_all [sq]
 
 /-
-There are `2 ^ (n^2)` square binary matrices.
+If n is greater than the cardinality of the input space,
+then any hash family is strongly universal-n (vacuously).
 -/
-lemma h_card_matrices (n : ℕ) : Fintype.card (Matrix (Fin n) (Fin n) (ZMod 2)) = 2 ^ (n ^ 2) := by
-  simp only [Matrix, Fintype.card_pi, ZMod.card, Finset.prod_const, Finset.card_univ,
-    Fintype.card_fin]
-  ring
+theorem stronglyUniversal_n_of_gt_card [Fintype Input]
+    (n : ℕ) (H : HashFamily Seed Input Output) (h : Fintype.card Input < n) :
+    H.stronglyUniversal_n n := by
+  intro a ha b
+  exact absurd (Fintype.card_le_of_injective a ha) (by simpa using h)
 
 /-
-Binary Matrix-vector multiplication (using all matrices) is a Universal-2 hash function.
+The composition of a universal2 function with an injective function is universal2.
 -/
-lemma matrix_mulVec_isUniversal2 (n : ℕ) :
-    IsUniversal2 (fun (M : Matrix (Fin n) (Fin n) (ZMod 2)) (v : Fin n → ZMod 2)
-        => Matrix.mulVec M v) := by
-  -- The condition $Mx = My$ is equivalent to $M(x-y) = 0$.
-  -- Let $v = x-y$. Since $x \neq y$, $v \neq 0$.
-  intro x y hxy
-  set v := x - y with hv
-  have hv_ne_zero : v ≠ 0 :=  sub_ne_zero_of_ne hxy
-  -- We need to count the number of matrices $M$ such that $Mv = 0$.
-  have h_count : (Finset.univ.filter (fun M : Matrix (Fin n) (Fin n) (ZMod 2)
-        => M.mulVec v = 0)).card = (2 : ℕ) ^ (n ^ 2 - n) := by
-    -- The linear map $M \mapsto Mv$ is surjective, so its kernel has cardinality $2^{n^2 - n}$.
-    have h_surjective : Function.Surjective (fun M : Matrix (Fin n) (Fin n) (ZMod 2)
-        => M.mulVec v) := by
-      intro w
-      obtain ⟨i, hi⟩ : ∃ i, v i ≠ 0 := Function.ne_iff.mp hv_ne_zero
-      use Matrix.of (fun j k => if k = i then w j else 0)
-      ext j
-      simp  [Matrix.mulVec, dotProduct]
-      cases Fin.exists_fin_two.mp ⟨v i, rfl⟩ <;> aesop
-    -- The kernel of this map has dimension $n^2 - n$.
-    have h_kernel1 : (Finset.univ.filter (fun M : Matrix (Fin n) (Fin n) (ZMod 2)
-            => M.mulVec v = 0)).card * (Finset.univ : Finset (Fin n → ZMod 2)).card
-            = (Finset.univ : Finset (Matrix (Fin n) (Fin n) (ZMod 2))).card := by
-      have h_kernel2 : ∀ w : Fin n → ZMod 2,
-            (Finset.univ.filter (fun M : Matrix (Fin n) (Fin n) (ZMod 2) => M.mulVec v = w)).card
-            = (Finset.univ.filter (fun M : Matrix (Fin n) (Fin n) (ZMod 2) => M.mulVec v = 0)).card
-            := by
-        intro w
-        obtain ⟨M₀, hM₀⟩ : ∃ M₀ : Matrix (Fin n) (Fin n) (ZMod 2), M₀.mulVec v = w := h_surjective w
-        have h_preimage_card : Finset.filter (fun M : Matrix (Fin n) (Fin n) (ZMod 2)
-                => M.mulVec v = w) Finset.univ = Finset.image (fun M => M₀ + M) (Finset.filter
-                (fun M : Matrix (Fin n) (Fin n) (ZMod 2) => M.mulVec v = 0) Finset.univ) := by
-          ext M; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.image_add_left,
-            Finset.mem_preimage]
-          simp only [← hM₀, Matrix.add_mulVec, Matrix.neg_mulVec]
-          simp only [neg_add_eq_sub, sub_eq_zero]
-        rw [h_preimage_card, Finset.card_image_of_injective _ ( add_right_injective M₀ )]
-      have h_kernel3 : (Finset.univ : Finset (Matrix (Fin n) (Fin n) (ZMod 2))).card
-            = ∑ w : Fin n → ZMod 2, (Finset.univ.filter (fun M : Matrix (Fin n) (Fin n) (ZMod 2)
-            => M.mulVec v = w)).card := by
-        simp  only [Finset.card_eq_sum_ones, Finset.sum_fiberwise]
-      simp_all [mul_comm]
-    simp_all [Finset.card_univ]
-    apply mul_left_cancel₀ ( pow_ne_zero n two_ne_zero )
-    rw [← pow_add, Nat.add_sub_of_le ( by nlinarith )]
-    linarith [h_card_matrices n]
-  have nat_pow_sub_mul_pow : (2 : ℕ) ^ (n ^ 2 - n) * 2 ^ n = 2 ^ (n ^ 2) := by
-    apply pow_sub_mul_pow
-    nlinarith
-  simp_all [sub_eq_zero]
-  convert (le_of_eq nat_pow_sub_mul_pow) using 2
-  · convert h_count using 2 ; ext ; simp  [sub_eq_zero, Matrix.mulVec_sub]
-  · simp  [Matrix, Fintype.card_pi]
-    ring
+theorem HashFamily.universal2_of_comp_injective_seed (H : HashFamily Seed Input Output)
+    {f : Seed → Seed} (hf : f.Injective) :
+    H.universal2 ↔ HashFamily.universal2 (H ∘ f) :=  by
+  constructor
+  · intro h x y hxy
+    convert h x y hxy using 1
+    simp only [Function.comp_apply, Set.coe_setOf, Fintype.card_subtype, mul_eq_mul_right_iff]
+    rw [Finset.card_filter, Finset.card_filter]
+    exact Or.inl (Equiv.sum_comp (Equiv.ofBijective f
+      ⟨hf, Finite.injective_iff_surjective.mp hf⟩) fun i => if H i x = H i y then 1 else 0)
+  · intro h x y hxy
+    convert h x y hxy using 1
+    rw [Fintype.card_subtype, Fintype.card_subtype]
+    rw [Finset.card_filter, Finset.card_filter]
+    rw [← Equiv.sum_comp (Equiv.ofBijective f ⟨hf, Finite.injective_iff_surjective.mp hf⟩)]
+    simp_all [Equiv.ofBijective_apply, Set.mem_setOf_eq, Finset.sum_boole, Nat.cast_id,
+      Function.comp_apply]
+
+theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
+    (H : HashFamily Seed Input Output)
+    {f : Seed2 → Seed} (hf : f.Bijective) :
+    H.universal2 ↔ HashFamily.universal2 (H ∘ f) := by
+  have h_collision_count : ∀ x y : Input, x ≠ y
+      → (Fintype.card {s : Seed2 | (H ∘ f) s x = (H ∘ f) s y})
+      = (Fintype.card {s : Seed | H s x = H s y}) := by
+    intro x y hxy
+    exact Fintype.card_congr (Equiv.ofBijective (fun s => ⟨f s, by aesop⟩) ⟨
+        fun a b h => by have := hf.1 ( by aesop : f a = f b ) ; aesop,
+        fun a => by obtain ⟨ s, hs ⟩ := hf.2 a; aesop ⟩)
+  constructor <;> intro h x y hxy <;> have := h x y hxy <;> simp_all [ Fintype.card_subtype ]
+  · replace hf := congr_arg Multiset.card hf ; aesop
+  · replace hf := congr_arg Multiset.card hf; aesop
+
+end SeedInputOutput

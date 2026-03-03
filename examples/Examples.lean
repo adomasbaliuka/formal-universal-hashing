@@ -1,3 +1,7 @@
+/-
+Examples illustrating definitions elsewhere,
+to ease understanding and make definitions more concrete
+-/
 import UniversalHashing.Toeplitz
 import UniversalHashing.Basic
 
@@ -14,18 +18,12 @@ end MatMulExample
 
 section Example_2x3
 
-/-- The most general 2x3 Toeplitz matrix -/
+/-- The most general binary 2x3 Toeplitz matrix -/
 def Toeplitz2x3 (t1 t2 t3 t4 : ZMod 2) : Matrix (Fin 2) (Fin 3) (ZMod 2) :=
     !![
         t1, t3, t4;
         t2, t1, t3
     ]
-
-/- The type of 2x3 binary Toeplitz matrices -/
-abbrev Toeplitz2x3_t : Type := BinToeplitzMatrix 2 3
-
-open Classical in
-noncomputable instance instFintypeToeplitz2x3_t : Fintype Toeplitz2x3_t := Subtype.fintype _
 
 example (t1 t2 t3 t4 : ZMod 2) : (Toeplitz2x3 t1 t2 t3 t4).IsToeplitz := by
   simp only [Toeplitz2x3, Matrix.IsToeplitz]
@@ -34,7 +32,9 @@ example (t1 t2 t3 t4 : ZMod 2) : (Toeplitz2x3 t1 t2 t3 t4).IsToeplitz := by
 
 /- 3x2 Toeplitz matrices give a universal hash family (apply general result). -/
 example :
-    IsUniversal2 (fun (M : Toeplitz2x3_t) (v : Fin 3 → ZMod 2) => M.val.mulVec v) := by
-  refine toeplitz_mulVec_isUniversal2 (show 2 ≤ 3 from Nat.AtLeastTwo.prop)
+    HashFamily.universal2 (fun (M : BinToeplitzMatrix 2 3) (v : Fin 3 → ZMod 2) => M.val.mulVec v)
+    := by
+  have : 2 ≤ 3 := Nat.AtLeastTwo.prop
+  exact toeplitz_mulVec_isUniversal2 this
 
 end Example_2x3
