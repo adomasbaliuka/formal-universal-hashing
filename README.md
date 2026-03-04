@@ -1,7 +1,7 @@
 # Universal hashing in LEAN4
 [![Lean Action CI](https://github.com/adomasbaliuka/formal-universal-hashing/actions/workflows/lean_action_ci.yml/badge.svg)](https://github.com/adomasbaliuka/formal-universal-hashing/actions/workflows/lean_action_ci.yml)
 
-This is a work in progress which may be merged into or become a dependency for [formal-qkd](https://github.com/adomasbaliuka/formal-qkd).
+This is a work in progress related to [formal-qkd](https://github.com/adomasbaliuka/formal-qkd).
 
 Contributions are very welcome!
 
@@ -45,8 +45,8 @@ See [Preliminary, auto-generated API-docs](https://adomasbaliuka.github.io/forma
 
 # Acknowledgements
 
-Many thanks to the [Mathlib](https://mathlib.org/) community for developing the LEAN4 mathematics library. It serves as a foundation for this project.
+Many thanks to the [Mathlib](https://mathlib.org/) community for developing the LEAN4 mathematics library which serves as a foundation for this project.
 
 This project is developed with the help of artificial intelligence.
 In particular, [Aristotle by Harmonic](https://aristotle.harmonic.fun) created the first working version of many proofs.
-For use with artificial inteligence, a system such as LEAN4 has the significant advantage of much reduced work in reviewing the output, due to proofs being checked by the LEAN4 kernel.
+For use with artificial intelligence, a system such as LEAN4 has the significant advantage of much reduced work in reviewing the output, due to proofs being checked by the LEAN4 kernel.
