@@ -1,5 +1,4 @@
-import UniversalHashing.Toeplitz
-import UniversalHashing.Basic
+import UniversalHashing
 
 /-!
 Examples illustrating definitions elsewhere,
@@ -34,8 +33,6 @@ example (t1 t2 t3 t4 : ZMod 2) : (Toeplitz2x3 t1 t2 t3 t4).IsToeplitz := by
 /-- 3x2 Toeplitz matrices give a universal hash family (apply general result). -/
 example :
     HashFamily.universal2 (fun (M : BinToeplitzMatrix 2 3) (v : Fin 3 → ZMod 2) => M.val.mulVec v)
-    := by
-  have : 2 ≤ 3 := Nat.AtLeastTwo.prop
-  exact toeplitz_mulVec_isUniversal2 this
+    := binToeplitz_mulVec_isUniversal2 2 3
 
 end Example_2x3
