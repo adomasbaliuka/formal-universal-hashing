@@ -28,7 +28,7 @@ Let's see which we keep in the end...
 
 ## Strongly-universal-n
 
-A family H is strongly universal (also known as ``pairwise independent'') if
+A family H is strongly universal (also known as "pairwise independent") if
   for all ``x ≠ y`` and all ``a b : Output``,
     ``\Pr_i [h_i(x) = a ∧ h_i(y) = b] = 1 / |Output|^2``
 
@@ -85,13 +85,12 @@ theorem HashFamily.universal2_of_seed_empty (hash : HashFamily Seed Input Output
 def probUniform (p : Seed → Prop) [DecidablePred p] : ℚ :=
   (Fintype.card {i : Seed // p i}) / (Fintype.card Seed)
 
-/--
-  Alternative (equivalent) statement of universal-2 using `probUniform`.
+/-- Alternative (equivalent) statement of universal-2 using `probUniform`.
 
-  A family H is universal2 if for all distinct x ≠ y,
-  the collision probability is at most 1 / |Output|:
+A family H is universal2 if for all distinct x ≠ y,
+the collision probability is at most 1 / |Output|:
 
-    ``Pr_i [h_i(x) = h_i(y)] ≤ 1 / |Output|``
+``Pr_i [h_i(x) = h_i(y)] ≤ 1 / |Output|``
 -/
 theorem HashFamily.universal2_iff_probUniform (H : HashFamily Seed Input Output) :
     H.universal2
@@ -150,10 +149,10 @@ def HashFamily.stronglyUniversal2 (H : HashFamily Seed Input Output) : Prop :=
       = ((Fintype.card Seed) : ℚ) / (Fintype.card Output : ℚ)^2
 
 /--
-  Equivalent statement of strongly-universal-2 using `probUniform`.
+Equivalent statement of strongly-universal-2 using `probUniform`.
 
-  A family H is `stronglyUniversal2` if for all distinct x ≠ y, given two outputs a and b,
-  the probability to map `x ↦ a` and `y ↦ b` is exactly `1 / (|Output|^2)`.
+A family H is `stronglyUniversal2` if for all distinct x ≠ y, given two outputs a and b,
+the probability to map `x ↦ a` and `y ↦ b` is exactly `1 / (|Output|^2)`.
 -/
 theorem HashFamily.stronglyUniversal2_iff_probUniform_of_inhabited [Nonempty Seed]
     (H : HashFamily Seed Input Output) :
