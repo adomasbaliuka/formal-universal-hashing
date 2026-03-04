@@ -16,6 +16,34 @@ def v : Fin 3 → ZMod 2 := ![1, 0, 1]
 
 end MatMulExample
 
+
+section toeplitz
+
+
+/- The binary matrix ``\begin{pmatrix}  1 & 0 \\ 1 & 1 \end{pmatrix}`` is Toeplitz. -/
+example : !![(1 : ZMod 2), 0,
+              1,           1].IsToeplitz := by
+  intro i j
+  fin_cases i; fin_cases j
+  repeat simp_all
+  decide
+
+/-- The binary matrix ``\begin{pmatrix}  0 & 1 \\ 1 & 1 \end{pmatrix}`` is **NOT** Toeplitz
+ because the main diagonal is not constant. -/
+example : ¬ !![(0 : ZMod 2), 1;
+                1,           1].IsToeplitz := by
+  intro h
+  have : !![(0 : ZMod 2), 1; 1, 1] 0 0 = 1 :=
+      calc !![(0 : ZMod 2), 1; 1, 1] 0 0
+      _ = !![(0 : ZMod 2), 1; 1, 1] 1 1 := by
+          apply h
+          simp only [Fin.isValue, Fin.coe_ofNat_eq_mod, Nat.zero_mod, Nat.mod_succ, zero_add]
+      _ = 1 := by dsimp
+  have : !![(0 : ZMod 2), 1; 1, 1] 0 0 = 0 := by dsimp
+  contradiction
+
+end toeplitz
+
 section Example_2x3
 
 /-- The most general binary 2x3 Toeplitz matrix -/
