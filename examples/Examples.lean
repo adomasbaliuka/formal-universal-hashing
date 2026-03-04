@@ -1,9 +1,10 @@
-/-
+import UniversalHashing.Toeplitz
+import UniversalHashing.Basic
+
+/-!
 Examples illustrating definitions elsewhere,
 to ease understanding and make definitions more concrete
 -/
-import UniversalHashing.Toeplitz
-import UniversalHashing.Basic
 
 -- Shows evaluated matrix multiplication
 section MatMulExample
@@ -30,7 +31,7 @@ example (t1 t2 t3 t4 : ZMod 2) : (Toeplitz2x3 t1 t2 t3 t4).IsToeplitz := by
   fin_cases t1 <;>  fin_cases t2 <;>  fin_cases t3 <;>  fin_cases t4 <;>
   decide
 
-/- 3x2 Toeplitz matrices give a universal hash family (apply general result). -/
+/-- 3x2 Toeplitz matrices give a universal hash family (apply general result). -/
 example :
     HashFamily.universal2 (fun (M : BinToeplitzMatrix 2 3) (v : Fin 3 → ZMod 2) => M.val.mulVec v)
     := by

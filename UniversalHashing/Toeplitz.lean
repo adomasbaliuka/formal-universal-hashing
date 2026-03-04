@@ -1,9 +1,3 @@
-/-
-This module defines Toeplitz matrices, i.e., matrices with constant diagonals.
-
-Main result: `binToeplitz_mulVec_isUniversal2` shows that matrix-vector multiplication
-with (binary) Toeplitz matrices is universal-2.
--/
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Algebra.Polynomial.AlgebraMap
@@ -13,6 +7,13 @@ import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 import UniversalHashing.Basic
+
+/-!
+This module defines Toeplitz matrices, i.e., matrices with constant diagonals.
+
+Main result: `binToeplitz_mulVec_isUniversal2` shows that matrix-vector multiplication
+with (binary) Toeplitz matrices is universal-2.
+-/
 
 open scoped Nat
 
@@ -34,12 +35,12 @@ instance decidablePredMatrixIsToeplitz {m n : ℕ} {α : Type*} [DecidableEq α]
   unfold Matrix.IsToeplitz
   infer_instance
 
-/-
+/--
 The type of (finite-size) Toeplitz matrices
 -/
 def ToeplitzMatrix (m n : ℕ) (α : Type*) := {M : Matrix (Fin m) (Fin n) α // M.IsToeplitz}
 
-/-
+/--
 The type of binary Toeplitz matrices, equipped with a Fintype instance.
 -/
 abbrev BinToeplitzMatrix (m n : ℕ) := ToeplitzMatrix m n (ZMod 2)
@@ -52,7 +53,7 @@ example : !![(1 : ZMod 2), 0,
   repeat simp_all
   decide
 
-/- The binary matrix ``\begin{pmatrix}  0 & 1 \\ 1 & 1 \end{pmatrix}`` is **NOT** Toeplitz
+/-- The binary matrix ``\begin{pmatrix}  0 & 1 \\ 1 & 1 \end{pmatrix}`` is **NOT** Toeplitz
  because the main diagonal is not constant.-/
 example : ¬ !![(0 : ZMod 2), 1;
                 1,           1].IsToeplitz := by
@@ -87,7 +88,7 @@ theorem toeplitzSub {R : Type*} [AddGroup R] {m n : ℕ} (M M' : ToeplitzMatrix 
 end DefToeplitz
 section
 
-/-
+/--
 Extract the defining parameters (diagonal entries) of a Toeplitz matrix.
 -/
 def ToeplitzMatrix.to_params {F : Type*} {m n : ℕ} [NeZero m] [NeZero n]
@@ -99,7 +100,7 @@ def ToeplitzMatrix.to_params {F : Type*} {m n : ℕ} [NeZero m] [NeZero n]
     else
       M.val ⟨k - (n - 1), by omega⟩ 0
 
-/-
+/--
 Construct a Toeplitz matrix from its defining parameters (diagonal entries).
 -/
 def ToeplitzMatrix.from_params {F : Type*} {m n : ℕ} (v : Fin (m + n - 1) → F)
@@ -110,7 +111,7 @@ def ToeplitzMatrix.from_params {F : Type*} {m n : ℕ} (v : Fin (m + n - 1) → 
     simp only [Matrix.of_apply]
     grind⟩
 
-/-
+/--
 A Toeplitz matrix is uniquely represented by a parameter vector (containing diagonal entries).
 -/
 def ToeplitzMatrix.equiv_params {F : Type*} {m n : ℕ} [NeZero m] [NeZero n]
@@ -152,14 +153,14 @@ def ToeplitzMatrix.equiv_params {F : Type*} {m n : ℕ} [NeZero m] [NeZero n]
       linarith [Fin.is_lt x]
     · exact congr_arg _ (Fin.ext <| by norm_num; omega)
 
-/- Note: instance computable but slow.
+/-- Note: instance computable but slow.
 For actually computing cardinality, use `card_ToeplitzMatrix` instead. -/
 instance inst_Fintype_ToeplitzMatrix {F : Type*} [Fintype F] [DecidableEq F] {m n : ℕ} :
     Fintype (ToeplitzMatrix m n F) := by
   unfold ToeplitzMatrix Matrix.IsToeplitz
   infer_instance
 
-/-
+/--
 The number of `m x n` Toeplitz matrices with `Fintype` entries is `(EntryType.card) ^ (m + n - 1)`.
 -/
 theorem card_ToeplitzMatrix {F : Type*} [Fintype F] [DecidableEq F] {m n : ℕ} [NeZero m] [NeZero n]
@@ -286,7 +287,7 @@ lemma toeplitz_diag_sum_not_all_zero {m n : ℕ} [NeZero m]
     grind
   · simp_all
 
-/-
+/--
 Multiplication by a non-zero vector is a surjective map
 from the space of Toeplitz parameters to the output space.
 -/
@@ -310,7 +311,7 @@ theorem surjective_toeplitz_mulVec_of_ne_zero (m : ℕ) {n : ℕ} [NeZero m] [Ne
     obtain ⟨p, hp⟩ := h x
     grind
 
-/-
+/--
 Main result:
 Multiplication by a random binary Toeplitz matrix is a universal-2 hash family.
 -/
@@ -357,7 +358,7 @@ theorem binToeplitz_mulVec_isUniversal2 (m n : ℕ) [NeZero m] [NeZero n] :
   simp_all only [Matrix.mulVec_sub, sub_eq_iff_eq_add, zero_add]
   exact h_card
 
-/- Toeplitz hash, expressed using only bit vectors. -/
+/-- Toeplitz hash, expressed using only bit vectors. -/
 def toeplitzHash (m n : ℕ) :
     (HashFamily (Fin (m + n - 1) → ZMod 2) (Fin n → ZMod 2) (Fin m → ZMod 2))
     := fun param v ↦
@@ -375,7 +376,7 @@ theorem toeplitzHash.universal2 (m n : ℕ) [NeZero m] [NeZero n] :
 
 theorem Nat.ne_rat_ge1_of_lt1 (n : ℕ) (q : ℚ) (nne0 : n > 0) (qlt1 : q < 1) : n ≠ q := by aesop
 
-/- Counterexample: `toeplitzHash` is **NOT** in general strongly universal.
+/-- Counterexample: `toeplitzHash` is **NOT** in general strongly universal.
 Proof by explicit computation, mapping two-bit vectors to 1-bit vectors.
 -/
 example : ¬ (toeplitzHash 2 1).stronglyUniversal2 := by

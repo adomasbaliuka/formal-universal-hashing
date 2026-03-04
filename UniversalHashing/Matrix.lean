@@ -1,9 +1,3 @@
-/-
-Proof that Binary Matrix-vector multiplication (using all matrices) is a Universal-2 hash function:
-`matrix_mulVec_isUniversal2`
-
-(This family is very big and therefore not useful in practice)
--/
 import Mathlib.Tactic
 import Mathlib.LinearAlgebra.Matrix.Defs
 import Mathlib.LinearAlgebra.Dimension.Finrank
@@ -14,6 +8,13 @@ import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.Group.Pointwise.Finset.Basic
 
 import UniversalHashing.Basic
+
+/-!
+Proof that Binary Matrix-vector multiplication (using all matrices) is a Universal-2 hash function:
+`matrix_mulVec_isUniversal2`
+
+(This family is very big and therefore not useful in practice)
+-/
 
 set_option relaxedAutoImplicit false
 set_option autoImplicit false
@@ -74,7 +75,7 @@ theorem card_eq_two_pow_finrank (p : ℕ) [Fact p.Prime] (V : Type*)
     simp only [Fintype.card_pi, ZMod.card, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
   exact h₁.trans h₂
 
-/-
+/--
 There are `2 ^ (m * n)` binary mxn matrices.
 -/
 theorem h_card_matrices (p : ℕ) [Fact p.Prime] (m n : ℕ) :
@@ -140,12 +141,12 @@ theorem card_ker_pow_dim {p : ℕ} [Fact p.Prime] (a : ℕ) {b : ℕ} {v : Fin b
     · simp_all
     · tauto
 
-/- Hash by matrix-times-vector modulo q -/
+/-- Hash by matrix-times-vector modulo q -/
 def matHash (q m n : ℕ) :
     HashFamily (Matrix (Fin m) (Fin n) (ZMod q)) (Fin n → ZMod q) (Fin m → ZMod q) := fun M v ↦
   M.mulVec v
 
-/-
+/--
 Matrix-vector multiplication (using all matrices modulo `p`) is Universal2.
 -/
 theorem matHash_universal2atHash_universal2 (p : ℕ) [Fact p.Prime] (a b : ℕ) :
@@ -167,7 +168,7 @@ theorem matHash_universal2atHash_universal2 (p : ℕ) [Fact p.Prime] (a b : ℕ)
       ring_nf
       ring
 
-/-
+/--
 Counterexample:
 Binary Matrix-vector multiplication (using binary matrices) is **not** strongly-Universal-2.
 -/

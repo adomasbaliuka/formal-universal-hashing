@@ -1,4 +1,16 @@
-/-
+import Mathlib.Tactic.Basic
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.LinearAlgebra.Matrix.Defs
+import Mathlib.Data.Matrix.Mul
+import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Matrix.Basic
+import Mathlib.Algebra.Group.Pointwise.Finset.Basic
+
+/-!
 This module defines notions of universality for families of hash functions.
 
 A **hash family** is a family of functions `Input → Output`.
@@ -21,18 +33,6 @@ A family H is strongly universal (also known as ``pairwise independent'') if
     ``\Pr_i [h_i(x) = a ∧ h_i(y) = b] = 1 / |Output|^2``
 
 -/
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.Algebra.BigOperators.Field
-import Mathlib.LinearAlgebra.Matrix.Defs
-import Mathlib.Data.Matrix.Mul
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Algebra.Group.Pointwise.Finset.Basic
-
 
 set_option synthInstance.maxSize 128
 set_option relaxedAutoImplicit false
@@ -46,7 +46,8 @@ Rather than define it as a set of functions, we put the choice of function into 
 abbrev HashFamily (Seed Input Output : Type*) : Type _ :=
   Seed → Input → Output
 
-/-- We are considering cases with finitely many hash functions.
+/--
+We are considering cases with finitely many hash functions.
 
 In terms of definitions, if all types are `Fintype`
 and both `Seed` and `Input` have decidable equality,
@@ -64,7 +65,7 @@ variable {Seed Input Output : Type*}
   [Fintype Seed] [Fintype Output]
   [DecidableEq Output]
 
-/-
+/--
 A hash function taking a seed and an input is universal-2 if
 for any distinct inputs x and y, the probability (over the seed) of a collision
 is at most 1/|Output|.
@@ -84,7 +85,7 @@ theorem HashFamily.universal2_of_seed_empty (hash : HashFamily Seed Input Output
 def probUniform (p : Seed → Prop) [DecidablePred p] : ℚ :=
   (Fintype.card {i : Seed // p i}) / (Fintype.card Seed)
 
-/-
+/--
   Alternative (equivalent) statement of universal-2 using `probUniform`.
 
   A family H is universal2 if for all distinct x ≠ y,
@@ -121,7 +122,7 @@ theorem HashFamily.universal2_iff_probUniform (H : HashFamily Seed Input Output)
       simp_all only [mul_zero, not_lt_zero'] )
     · exact Fintype.card_pos_iff.mpr ⟨Classical.choose (Finset.card_pos.mp (by nlinarith))⟩
 
-/-
+/--
 A hash family is **strongly-universal-n** (also called "n-wise independent") if
 - given `n` distinct inputs `a₁, a₂, ...`
 - and n (not necessarily distinct) outputs `b₁, b₂, ...`,
@@ -136,7 +137,7 @@ def HashFamily.stronglyUniversal_n (n : ℕ) (H : HashFamily Seed Input Output) 
     Fintype.card {i : Seed // ∀ (j : Fin n), H i (a j) = b j }
       = (Fintype.card Seed : ℚ) / ((Fintype.card Output) ^ n : ℚ)
 
-/-
+/--
 Special case: a family H is **strongly-universal-2**
 (also known as just "strongly universal", or "pairwise independent") if
   for all ``x ≠ y`` and all ``a b : Output``,
@@ -148,7 +149,7 @@ def HashFamily.stronglyUniversal2 (H : HashFamily Seed Input Output) : Prop :=
     Fintype.card {i : Seed // H i x = a ∧ H i y = b}
       = ((Fintype.card Seed) : ℚ) / (Fintype.card Output : ℚ)^2
 
-/-
+/--
   Equivalent statement of strongly-universal-2 using `probUniform`.
 
   A family H is `stronglyUniversal2` if for all distinct x ≠ y, given two outputs a and b,
@@ -173,7 +174,7 @@ theorem HashFamily.stronglyUniversal2_iff_probUniform_of_inhabited [Nonempty See
     field_simp at h
     exact h
 
-/- `stronglyUniversal2` is a special case of `strongly_universal_n` for `n = 2`. -/
+/-- `stronglyUniversal2` is a special case of `strongly_universal_n` for `n = 2`. -/
 theorem HashFamily.stronglyUniversal2_stronglyUniversal_n_2
     [Inhabited Seed] (H : HashFamily Seed Input Output) :
     H.stronglyUniversal2 ↔ H.stronglyUniversal_n 2 := by
@@ -204,7 +205,7 @@ theorem HashFamily.stronglyUniversal2_stronglyUniversal_n_2
     convert this
     simp_all only [ne_eq, Fin.forall_fin_two, Fin.isValue, as, Os]
 
-/- `stronglyUniversal2` implies `universal2`. -/
+/-- `stronglyUniversal2` implies `universal2`. -/
 theorem HashFamily.universal2_of_stronglyUniversal2 [DecidableEq Seed]
     (H : HashFamily Seed Input Output) :
     H.stronglyUniversal2 → H.universal2 := by
@@ -233,7 +234,7 @@ theorem HashFamily.universal2_of_stronglyUniversal2 [DecidableEq Seed]
       exact Finset.disjoint_left.mpr fun i hi₁ hi₂ => hab <| by aesop
   by_cases h : Fintype.card Output = 0 <;> simp_all [sq]
 
-/-
+/--
 If n is greater than the cardinality of the input space,
 then any hash family is strongly universal-n (vacuously).
 -/
@@ -243,7 +244,7 @@ theorem stronglyUniversal_n_of_gt_card [Fintype Input]
   intro a ha b
   exact absurd (Fintype.card_le_of_injective a ha) (by simpa using h)
 
-/-
+/--
 The composition of a universal2 function with an injective function is universal2.
 -/
 theorem HashFamily.universal2_of_comp_injective_seed (H : HashFamily Seed Input Output)

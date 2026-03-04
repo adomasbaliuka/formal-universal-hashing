@@ -1,13 +1,13 @@
-/-
-  Carter–Wegman-style universal hash family.
-
-  Main result: `linearHashFamily.universal2`
--/
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Data.Rat.Star
 import UniversalHashing.Basic
 
+/-!
+  Carter–Wegman-style universal hash family.
+
+  Main result: `linearHashFamily.universal2`
+-/
 
 set_option relaxedAutoImplicit false
 set_option autoImplicit false
@@ -28,7 +28,7 @@ instance decidableEq_fintypeLinearIndex : DecidableEq (LinearIndex p) := by
   unfold LinearIndex
   infer_instance
 
-/-
+/--
   Linear family over ZMod p:
 
     ``h_{a,b}(x) = a * x + b  (mod p),``
@@ -45,7 +45,7 @@ def linearHashFamily : HashFamily (LinearIndex p) (ZMod p) (ZMod p) :=
   fun i x ↦ i.val.1 * x + i.val.2
 
 -- TODO rename
-/-
+/--
   Hash family ``H_1`` in [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8)).
 
     ``h_{a,b}(x) = a * x + b  (mod p),``
@@ -75,7 +75,7 @@ theorem linearHashFamily.universal2 :
     Subtype.forall, iff_false, Prod.forall, Set.setOf_false, Fintype.card_eq_zero, ZMod.card,
     zero_mul, Fintype.card_subtype_compl, Fintype.card_prod, zero_le]
 
-/- Universality of the `generalLinearHashFamily`, where inputs can be restricted. -/
+/-- Universality of the `generalLinearHashFamily`, where inputs can be restricted. -/
 theorem generalLinearHashFamily.universal2 {a : Nat} (alep : a ≤ p) :
     (generalLinearHashFamily p a).universal2 := by
   have := linearHashFamily.universal2 p
@@ -85,7 +85,8 @@ theorem generalLinearHashFamily.universal2 {a : Nat} (alep : a ≤ p) :
   rw [Nat.mod_eq_of_lt, Nat.mod_eq_of_lt]
   <;> contrapose! hxy <;> linarith [Fin.is_lt x, Fin.is_lt y]
 
-/- Counterexample: `linearHashFamily` is NOT strongly universal.
+/--
+Counterexample: `linearHashFamily` is NOT strongly universal.
 Proof by explicit computation for ``p = 2``.
 -/
 example : ¬ (linearHashFamily 2).stronglyUniversal2 := by

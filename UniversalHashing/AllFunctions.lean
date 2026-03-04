@@ -1,11 +1,12 @@
-/-
+import UniversalHashing.Basic
+
+/-!
 The hash family "all functions" has all properties we define.
 It is completely impractical for pretty much all use-cases (due to being too big).
 
 This file just proves those statements for the sake if illustrating this fact and adding confidence
 that the definitions are correct.
 -/
-import UniversalHashing.Basic
 
 set_option relaxedAutoImplicit false
 
@@ -15,7 +16,7 @@ variable {Seed Input Output : Type*}
   [Fintype Seed] [Fintype Input] [Fintype Output]
   [DecidableEq Input] [DecidableEq Output]
 
-/- "All functions" as a hash family is strongly-universal-n for any n."-/
+/-- "All functions" as a hash family is strongly-universal-n for any n."-/
 theorem all_functions_strongly_universal_n (n : ℕ) :
     HashFamily.stronglyUniversal_n n (fun (s : Input → Output) (i : Input) => s i) := by
   intro
@@ -52,9 +53,7 @@ theorem all_functions_strongly_universal_n (n : ℕ) :
   · rw [eq_div_iff (by positivity), ← pow_add, Nat.sub_add_cancel]
     simpa using Fintype.card_le_of_injective ha ha_inj
 
-/-
-"all functions" is a universal2 family.
--/
+/-- "all functions" is a universal2 family. -/
 example [Inhabited Input] [Inhabited Output] :
     HashFamily.universal2 (fun (s : Input → Output) (i : Input) => s i) := by
   apply HashFamily.universal2_of_stronglyUniversal2
