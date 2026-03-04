@@ -54,7 +54,7 @@ example : !![(1 : ZMod 2), 0,
   decide
 
 /-- The binary matrix ``\begin{pmatrix}  0 & 1 \\ 1 & 1 \end{pmatrix}`` is **NOT** Toeplitz
- because the main diagonal is not constant.-/
+ because the main diagonal is not constant. -/
 example : ¬ !![(0 : ZMod 2), 1;
                 1,           1].IsToeplitz := by
   intro h

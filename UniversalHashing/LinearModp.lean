@@ -3,10 +3,9 @@ import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Data.Rat.Star
 import UniversalHashing.Basic
 
-/-!
-  Carter–Wegman-style universal hash family.
+/-! # Carter–Wegman-style universal hash family.
 
-  Main result: `linearHashFamily.universal2`
+Main result: `linearHashFamily.universal2`
 -/
 
 set_option relaxedAutoImplicit false
@@ -28,36 +27,34 @@ instance decidableEq_fintypeLinearIndex : DecidableEq (LinearIndex p) := by
   unfold LinearIndex
   infer_instance
 
-/--
-  Linear family over ZMod p:
+/-- Linear family over ZMod p:
 
-    ``h_{a,b}(x) = a * x + b  (mod p),``
+  ``h_{a,b}(x) = a * x + b  (mod p),``
 
-  This is a special case of
-  family ``H_1`` in [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8)).
+This is a special case of
+family ``H_1`` in [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8)).
 
-  where:
-    * `p` is prime,
-    * `a ≠ 0` in `ZMod p`,
-    * `(a, b)` is chosen uniformly from (ZMod p)² with a ≠ 0.
+where:
+* `p` is prime,
+* `a ≠ 0` in `ZMod p`,
+* `(a, b)` is chosen uniformly from (ZMod p)² with a ≠ 0.
 -/
 def linearHashFamily : HashFamily (LinearIndex p) (ZMod p) (ZMod p) :=
   fun i x ↦ i.val.1 * x + i.val.2
 
 -- TODO rename
-/--
-  Hash family ``H_1`` in [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8)).
+/-- Hash family ``H_1`` in [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8)).
 
     ``h_{a,b}(x) = a * x + b  (mod p),``
 
-  where:
-    * `p` is prime,
-    * `a ≠ 0` in `ZMod p`,
-    * `(a, b)` is chosen uniformly from (ZMod p)² with a ≠ 0.
-    * x < a
+where:
+* `p` is prime,
+* `a ≠ 0` in `ZMod p`,
+* `(a, b)` is chosen uniformly from (ZMod p)² with a ≠ 0.
+* x < a
 
-  Note that `x` is automatically cast to ℕ and then to `ZMod p`, which involves a modulo operation.
-  The family is universal-2 for `a < p`.
+Note that `x` is automatically cast to ℕ and then to `ZMod p`, which involves a modulo operation.
+The family is universal-2 for `a < p`.
 -/
 def generalLinearHashFamily (a : Nat) :
     HashFamily (LinearIndex p) (Fin a) (ZMod p) := fun i x ↦

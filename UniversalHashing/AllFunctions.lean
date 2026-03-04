@@ -16,7 +16,7 @@ variable {Seed Input Output : Type*}
   [Fintype Seed] [Fintype Input] [Fintype Output]
   [DecidableEq Input] [DecidableEq Output]
 
-/-- "All functions" as a hash family is strongly-universal-n for any n."-/
+/-- "All functions" as a hash family is strongly-universal-n for any n. -/
 theorem all_functions_strongly_universal_n (n : ℕ) :
     HashFamily.stronglyUniversal_n n (fun (s : Input → Output) (i : Input) => s i) := by
   intro
