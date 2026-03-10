@@ -55,7 +55,7 @@ then the hash family type is also a `Fintype`. -/
 instance inst_Fintype_HashFamily (Seed Input Output : Type*)
     [Fintype Seed] [DecidableEq Seed] [DecidableEq Input] [Fintype Input] [Fintype Output] :
     Fintype (HashFamily Seed Input Output) :=
-  ⟨Fintype.piFinset fun _ => Finset.univ, by simp⟩
+  ⟨Fintype.piFinset fun _ ↦ Finset.univ, by simp⟩
 
 section SeedInputOutput
 
@@ -69,10 +69,11 @@ variable {Seed Input Output : Type*}
 A hash function taking a seed and an input is universal-2 if
 for any distinct inputs x and y, the probability (over the seed) of a collision
 is at most 1/|Output|.
-This is expressed as: (number of seeds causing collision) * |Output| <= |Seed|.
+
+This is expressed as: (number of seeds causing collision) * |Output| ≤ |Seed|.
 -/
 def HashFamily.universal2 (hash : HashFamily Seed Input Output) : Prop :=
-  ∀ (x y : Input), x ≠ y →
+  ∀ ⦃x y : Input⦄, x ≠ y →
     Fintype.card {s : Seed | hash s x = hash s y} * Fintype.card Output
     ≤ Fintype.card Seed
 
@@ -96,14 +97,14 @@ theorem HashFamily.universal2_iff_probUniform (H : HashFamily Seed Input Output)
     H.universal2
     ↔
     ∀ ⦃x y : Input⦄, x ≠ y →
-    probUniform (fun i => H i x = H i y) ≤ (1 : ℚ) / (Fintype.card Output)
+    probUniform (fun i ↦ H i x = H i y) ≤ (1 : ℚ) / (Fintype.card Output)
     := by
   simp only [ne_eq, probUniform, one_div]
   field_simp [mul_comm, mul_assoc, mul_left_comm]
   constructor <;> intro h x y hxy
   · have h_div : (Fintype.card {i : Seed // H i x = H i y}) * Fintype.card Output
         ≤ Fintype.card Seed := by
-      convert h x y hxy using 1
+      convert h hxy using 1
     by_cases hOutput : Fintype.card Output = 0
       <;> by_cases hSeed : Fintype.card Seed = 0 <;> simp_all
     · simp_all [Fintype.card_eq_zero_iff ]
@@ -160,7 +161,7 @@ theorem HashFamily.stronglyUniversal2_iff_probUniform_of_inhabited [Nonempty See
     ↔
     ∀ ⦃x y : Input⦄, x ≠ y →
     ∀ a b : Output,
-      probUniform (fun i => H i x = a ∧ H i y = b)
+      probUniform (fun i ↦ H i x = a ∧ H i y = b)
         = 1 / ((Fintype.card Output : ℚ)^2) := by
   unfold HashFamily.stronglyUniversal2
   have : (Fintype.card Seed : ℚ) ≠ 0 := by
@@ -216,11 +217,11 @@ theorem HashFamily.universal2_of_stronglyUniversal2 [DecidableEq Seed]
   intro x y hxy
   have : Nonempty Seed := Fintype.card_pos_iff.mp (Nat.zero_lt_of_ne_zero seedNonempty)
   have h_prob : ∀ a : Output,
-    probUniform (fun i => H i x = a ∧ H i y = a) = 1 / (Fintype.card Output : ℚ)^2 :=
+    probUniform (fun i ↦ H i x = a ∧ H i y = a) = 1 / (Fintype.card Output : ℚ)^2 :=
       fun a ↦ H.stronglyUniversal2_iff_probUniform_of_inhabited.mp h hxy a a
   have h_sum :
-      probUniform (fun i => H i x = H i y)
-      = ∑ a : Output, probUniform (fun i => H i x = a ∧ H i y = a) := by
+      probUniform (fun i ↦ H i x = H i y)
+      = ∑ a : Output, probUniform (fun i ↦ H i x = a ∧ H i y = a) := by
     simp only [Fintype.card_subtype, probUniform]
     rw [← Finset.sum_div _ _ _, eq_comm]
     rw [← Nat.cast_sum, ← Finset.card_biUnion]
@@ -230,7 +231,7 @@ theorem HashFamily.universal2_of_stronglyUniversal2 [DecidableEq Seed]
         Finset.mem_univ, Finset.mem_filter, true_and, exists_eq_left']
       constructor <;> intros <;> simp_all only
     · intro a _ b _ hab
-      exact Finset.disjoint_left.mpr fun i hi₁ hi₂ => hab <| by aesop
+      exact Finset.disjoint_left.mpr fun i hi₁ hi₂ ↦ hab <| by aesop
   by_cases h : Fintype.card Output = 0 <;> simp_all [sq]
 
 /--
@@ -251,13 +252,13 @@ theorem HashFamily.universal2_of_comp_injective_seed (H : HashFamily Seed Input 
     H.universal2 ↔ HashFamily.universal2 (H ∘ f) :=  by
   constructor
   · intro h x y hxy
-    convert h x y hxy using 1
+    convert h hxy using 1
     simp only [Function.comp_apply, Set.coe_setOf, Fintype.card_subtype, mul_eq_mul_right_iff]
     rw [Finset.card_filter, Finset.card_filter]
     exact Or.inl (Equiv.sum_comp (Equiv.ofBijective f
-      ⟨hf, Finite.injective_iff_surjective.mp hf⟩) fun i => if H i x = H i y then 1 else 0)
+      ⟨hf, Finite.injective_iff_surjective.mp hf⟩) fun i ↦ if H i x = H i y then 1 else 0)
   · intro h x y hxy
-    convert h x y hxy using 1
+    convert h hxy using 1
     rw [Fintype.card_subtype, Fintype.card_subtype]
     rw [Finset.card_filter, Finset.card_filter]
     rw [← Equiv.sum_comp (Equiv.ofBijective f ⟨hf, Finite.injective_iff_surjective.mp hf⟩)]
@@ -272,10 +273,10 @@ theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
       → (Fintype.card {s : Seed2 | (H ∘ f) s x = (H ∘ f) s y})
       = (Fintype.card {s : Seed | H s x = H s y}) := by
     intro x y hxy
-    exact Fintype.card_congr (Equiv.ofBijective (fun s => ⟨f s, by aesop⟩) ⟨
-        fun a b h => by have := hf.1 ( by aesop : f a = f b ) ; aesop,
-        fun a => by obtain ⟨ s, hs ⟩ := hf.2 a; aesop ⟩)
-  constructor <;> intro h x y hxy <;> have := h x y hxy <;> simp_all [ Fintype.card_subtype ]
+    exact Fintype.card_congr (Equiv.ofBijective (fun s ↦ ⟨f s, by aesop⟩) ⟨
+        fun a b h ↦ by have := hf.1 ( by aesop : f a = f b ) ; aesop,
+        fun a ↦ by obtain ⟨ s, hs ⟩ := hf.2 a; aesop ⟩)
+  constructor <;> intro h x y hxy <;> have := h hxy <;> simp_all [ Fintype.card_subtype ]
   · replace hf := congr_arg Multiset.card hf ; aesop
   · replace hf := congr_arg Multiset.card hf; aesop
 

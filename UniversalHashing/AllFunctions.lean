@@ -18,7 +18,7 @@ variable {Seed Input Output : Type*}
 
 /-- "All functions" as a hash family is strongly-universal-n for any n. -/
 theorem all_functions_strongly_universal_n (n : ℕ) :
-    HashFamily.stronglyUniversal_n n (fun (s : Input → Output) (i : Input) => s i) := by
+    HashFamily.stronglyUniversal_n n (fun (s : Input → Output) (i : Input) ↦ s i) := by
   intro
   rename_i a ha
   intro ha_inj b
@@ -27,20 +27,20 @@ theorem all_functions_strongly_universal_n (n : ℕ) :
     have h_card : Fintype.card {f : Input → Output // ∀ j, f (ha j) = b j}
         = Fintype.card {f : {x : Input // x ∉ Set.range ha} → Output // True} := by
       rw [Fintype.card_subtype, Fintype.card_subtype]
-      refine Finset.card_bij (fun f hf => fun x => f x) ?_ ?_ ?_
+      refine Finset.card_bij (fun f hf ↦ fun x ↦ f x) ?_ ?_ ?_
       · intros
         simp_all only [Finset.filter_true, Finset.mem_univ]
       · simp only [Finset.mem_filter, Finset.mem_univ, true_and, funext_iff, Subtype.forall,
           Set.mem_range, not_exists]
         intro a₁ ha₁ a₂ ha₂ h x; by_cases hx : ∃ j, ha j = x <;> aesop
       · intro f hf
-        refine ⟨fun x => if hx : x ∈ Set.range ha
+        refine ⟨fun x ↦ if hx : x ∈ Set.range ha
             then b (Classical.choose hx)
             else f ⟨x, hx⟩, ?_, ?_⟩
         <;> simp [ha_inj.eq_iff]
         grind
     simp_all [Fintype.card_subtype]
-    have : Finset.filter (fun x => ∀ j : Fin n, ¬ha j = x) Finset.univ
+    have : Finset.filter (fun x ↦ ∀ j : Fin n, ¬ha j = x) Finset.univ
       = Finset.univ \ Finset.image ha Finset.univ := by
       ext; simp [Finset.mem_sdiff, Finset.mem_image]
     rw [this, Finset.card_sdiff]
@@ -55,9 +55,9 @@ theorem all_functions_strongly_universal_n (n : ℕ) :
 
 /-- "all functions" is a universal2 family. -/
 example [Inhabited Input] [Inhabited Output] :
-    HashFamily.universal2 (fun (s : Input → Output) (i : Input) => s i) := by
+    HashFamily.universal2 (fun (s : Input → Output) (i : Input) ↦ s i) := by
   apply HashFamily.universal2_of_stronglyUniversal2
   exact (HashFamily.stronglyUniversal2_stronglyUniversal_n_2
-    (fun (s : Input → Output) (i : Input) => s i)).mpr (all_functions_strongly_universal_n 2)
+    (fun (s : Input → Output) (i : Input) ↦ s i)).mpr (all_functions_strongly_universal_n 2)
 
 end

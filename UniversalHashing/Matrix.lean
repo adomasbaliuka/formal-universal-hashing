@@ -39,7 +39,7 @@ theorem mulVecMat_surjective (m : Type*) [Fintype m] [DecidableEq m] {v : n → 
     Function.Surjective (mulVecMat m v) := by
   intro w
   obtain ⟨i, hi⟩ : ∃ i, v i ≠ 0 := Function.ne_iff.mp vne0
-  use Matrix.of (fun j k => if k = i then (w j) / (v i) else 0)
+  use Matrix.of (fun j k ↦ if k = i then (w j) / (v i) else 0)
   ext j
   calc (fun j_1 ↦ if j_1 = i then (w j) / (v i) else 0) ⬝ᵥ v
     _ = ∑ i_1, (fun j_1 ↦ if j_1 = i then (w j) / (v i) else 0) i_1 * v i_1 := rfl
@@ -89,13 +89,13 @@ theorem finrank_matrix (p : ℕ) [Fact p.Prime] (m n : ℕ) :
   simp_all [Module.finrank_matrix, Fintype.card_fin, finrank_self, mul_one]
 
 theorem card_in_range_eq_card_ker (p : ℕ) [Fact p.Prime] (m n : ℕ) (v : Fin n → ZMod p) :
-    ∀ w ∈ Set.range (fun M : Matrix (Fin m) (Fin n) (ZMod p) => M.mulVec v),
+    ∀ w ∈ Set.range (fun M : Matrix (Fin m) (Fin n) (ZMod p) ↦ M.mulVec v),
       Fintype.card {M : Matrix (Fin m) (Fin n) (ZMod p) | M.mulVec v = w}
       = Fintype.card {M : Matrix (Fin m) (Fin n) (ZMod p) | M.mulVec v = 0} := by
   rintro _ ⟨M, rfl⟩
   rw [Fintype.card_subtype, Fintype.card_subtype, Finset.card_filter, Finset.card_filter]
-  apply Finset.sum_bij (fun N _ => N - M) (by simp) (by simp)
-  · exact fun b _ => ⟨b + M, Finset.mem_univ _, by simp⟩
+  apply Finset.sum_bij (fun N _ ↦ N - M) (by simp) (by simp)
+  · exact fun b _ ↦ ⟨b + M, Finset.mem_univ _, by simp⟩
   · simp [sub_eq_zero, Matrix.sub_mulVec]
 
 theorem mulVecMat_ZModp_card_ker {p : ℕ} [Fact p.Prime] (m : ℕ) {n : ℕ} (v : Fin n → ZMod p) :
@@ -103,8 +103,8 @@ theorem mulVecMat_ZModp_card_ker {p : ℕ} [Fact p.Prime] (m : ℕ) {n : ℕ} (v
     * Fintype.card (Set.range fun M : Matrix (Fin m) (Fin n) (ZMod p) ↦ M.mulVec v)
     = p ^ (m * n)
     := by
-  have h_orbit_stabilizer : ∑ w ∈ Finset.image (fun M : Matrix (Fin m) (Fin n) (ZMod p)
-      => M.mulVec v) Finset.univ,
+  have h_orbit_stabilizer :
+      ∑ w ∈ Finset.image (fun M : Matrix (Fin m) (Fin n) (ZMod p) ↦ M.mulVec v) Finset.univ,
       Fintype.card {M : Matrix (Fin m) (Fin n) (ZMod p) | M.mulVec v = w} = p ^ (m * n) := by
     rw [Finset.sum_image' 1]
     · norm_num [h_card_matrices]
@@ -125,7 +125,7 @@ theorem mulVecMat_ZModp_card_ker {p : ℕ} [Fact p.Prime] (m : ℕ) {n : ℕ} (v
 theorem card_ker_pow_dim {p : ℕ} [Fact p.Prime] (a : ℕ) {b : ℕ} {v : Fin b → ZMod p} (hv : v ≠ 0) :
     Fintype.card {M : Matrix (Fin a) (Fin b) (ZMod p) | M.mulVec v = 0} = p ^ (a * (b - 1)) := by
   have := mulVecMat_ZModp_card_ker a v
-  have h_range : Set.range (fun M : Matrix (Fin a) (Fin b) (ZMod p) => M.mulVec v) = Set.univ :=
+  have h_range : Set.range (fun M : Matrix (Fin a) (Fin b) (ZMod p) ↦ M.mulVec v) = Set.univ :=
     Set.eq_univ_of_forall (show Function.Surjective (mulVecMat (Fin a) v)
       from mulVecMat_surjective (Fin a) hv)
   rcases b with (_ | b)
@@ -178,11 +178,11 @@ theorem matHash_not_strongly_universal_n (a b : ℕ) (ha : a > 0) (hb : b > 0) :
     Fin.isValue, imp_self, zero_ne_one, imp_false, true_and, one_ne_zero, and_true,
     Fintype.card_subtype, Fintype.card_pi, ZMod.card, Finset.prod_const, Finset.card_univ,
     Fintype.card_fin, Nat.cast_pow, Nat.cast_ofNat, and_imp, not_forall]
-  refine ⟨fun i => if i = 0 then 0 else fun _ => 1,
+  refine ⟨fun i ↦ if i = 0 then 0 else fun _ ↦ 1,
       (by simp [funext_iff, Fin.pos_iff_nonempty.mp hb]),
       (by simp [funext_iff, Fin.pos_iff_nonempty.mp hb]), ?_⟩
   simp only [funext_iff]
-  use fun i => if i = 0 then fun _ => 1 else fun _ => 0
+  use fun i ↦ if i = 0 then fun _ ↦ 1 else fun _ ↦ 0
   norm_num [Fintype.card_subtype]
   cases a <;> cases b <;> norm_num [Fintype.card_pi] at *
   ring_nf
