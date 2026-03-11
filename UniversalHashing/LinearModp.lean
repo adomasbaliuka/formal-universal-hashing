@@ -5,6 +5,8 @@ import UniversalHashing.Basic
 
 /-! # Carter–Wegman-style universal hash family.
 
+  ``h_{a,b}(x) = a * x + b  (mod p),``
+
 Main result: `linearHashFamily.universal2`
 -/
 
@@ -18,14 +20,6 @@ variable (p : ℕ) [Fact p.Prime]
 /-- Index type: pairs (a, b) in (ZMod p)² with a ≠ 0. -/
 abbrev LinearIndex : Type :=
   {ab : (ZMod p) × (ZMod p) // ab.1 ≠ 0}
-
-instance inst_fintypeLinearIndex : Fintype (LinearIndex p) := by
-  unfold LinearIndex
-  infer_instance
-
-instance decidableEq_fintypeLinearIndex : DecidableEq (LinearIndex p) := by
-  unfold LinearIndex
-  infer_instance
 
 /-- Linear family over ZMod p:
 
@@ -63,8 +57,7 @@ def generalLinearHashFamily (a : Nat) :
 /- Universality of the `linearHashFamily` -/
 theorem linearHashFamily.universal2 :
     (linearHashFamily p).universal2 := by
-  refine fun x y hxy => ?_
-  -- The set of pairs (a, b) where a * x + b = a * y + b is exactly the set where a = 0.
+  intro x y hxy
   have h_set : {i : LinearIndex p | linearHashFamily p i x = linearHashFamily p i y}
         = {i : LinearIndex p | i.val.1 * (x - y) = 0} := by
     simp [mul_sub, sub_eq_zero, linearHashFamily]
@@ -75,12 +68,11 @@ theorem linearHashFamily.universal2 :
 /-- Universality of the `generalLinearHashFamily`, where inputs can be restricted. -/
 theorem generalLinearHashFamily.universal2 {a : Nat} (alep : a ≤ p) :
     (generalLinearHashFamily p a).universal2 := by
-  have := linearHashFamily.universal2 p
   intro x y hxy
-  convert this x y (show (x : ZMod p) ≠ y from ?_) using 1
+  convert linearHashFamily.universal2 p (show (x : ZMod p) ≠ y from ?_) using 1
   simp_all only [ne_eq, Fin.ext_iff, ZMod.natCast_eq_natCast_iff']
-  rw [Nat.mod_eq_of_lt, Nat.mod_eq_of_lt]
-  <;> contrapose! hxy <;> linarith [Fin.is_lt x, Fin.is_lt y]
+  rw [Nat.mod_eq_of_lt, Nat.mod_eq_of_lt] <;> contrapose! hxy
+    <;> linarith [Fin.is_lt x, Fin.is_lt y]
 
 /--
 Counterexample: `linearHashFamily` is NOT strongly universal.
