@@ -46,16 +46,17 @@ Rather than define it as a set of functions, we put the choice of function into 
 abbrev HashFamily (Seed Input Output : Type*) : Type _ :=
   Seed → Input → Output
 
-/--
-We are considering cases with finitely many hash functions.
+-- TODO delete, synthesized automatically.
+-- We are considering cases with finitely many hash functions.
+-- In terms of definitions, if all types are `Fintype`
+-- and both `Seed` and `Input` have decidable equality,
+-- then the hash family type is also a `Fintype`.
+-- section TMP
+-- variable (Seed Input Output : Type*)
+--      [Fintype Seed] [DecidableEq Seed] [DecidableEq Input] [Fintype Input] [Fintype Output]
 
-In terms of definitions, if all types are `Fintype`
-and both `Seed` and `Input` have decidable equality,
-then the hash family type is also a `Fintype`. -/
-instance inst_Fintype_HashFamily (Seed Input Output : Type*)
-    [Fintype Seed] [DecidableEq Seed] [DecidableEq Input] [Fintype Input] [Fintype Output] :
-    Fintype (HashFamily Seed Input Output) :=
-  ⟨Fintype.piFinset fun _ ↦ Finset.univ, by simp⟩
+-- #synth Fintype (HashFamily Seed Input Output) -- works!
+-- end TMP
 
 section SeedInputOutput
 
@@ -84,7 +85,7 @@ theorem HashFamily.universal2_of_seed_empty (hash : HashFamily Seed Input Output
 
 /-- The uniform probability of a predicate on `Seed`, modeled by counting. -/
 def probUniform (p : Seed → Prop) [DecidablePred p] : ℚ :=
-  (Fintype.card {i : Seed // p i}) / (Fintype.card Seed)
+  (Fintype.card {i : Seed // p i} : ℚ) / (Fintype.card Seed : ℚ)
 
 /-- Alternative (equivalent) statement of universal-2 using `probUniform`.
 
@@ -276,8 +277,7 @@ theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
     exact Fintype.card_congr (Equiv.ofBijective (fun s ↦ ⟨f s, by aesop⟩) ⟨
         fun a b h ↦ by have := hf.1 ( by aesop : f a = f b ) ; aesop,
         fun a ↦ by obtain ⟨ s, hs ⟩ := hf.2 a; aesop ⟩)
-  constructor <;> intro h x y hxy <;> have := h hxy <;> simp_all [ Fintype.card_subtype ]
-  · replace hf := congr_arg Multiset.card hf ; aesop
-  · replace hf := congr_arg Multiset.card hf; aesop
+  constructor <;> intro h x y hxy <;> have := h hxy <;> simp_all [Fintype.card_subtype]
+    <;> replace hf := congr_arg Multiset.card hf <;> aesop
 
 end SeedInputOutput
