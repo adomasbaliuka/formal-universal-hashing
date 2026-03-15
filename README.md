@@ -47,6 +47,22 @@ See [Preliminary, auto-generated API-docs](https://adomasbaliuka.github.io/forma
 
 Many thanks to the [Mathlib](https://mathlib.org/) community for developing the LEAN4 mathematics library which serves as a foundation for this project.
 
+Thanks to [Harmonic](https://aristotle.harmonic.fun) for free API access to their proving tools.
+
+# AI Use
+
 This project is developed with the help of artificial intelligence.
-In particular, [Aristotle by Harmonic](https://aristotle.harmonic.fun) created the first working version of many proofs.
+In particular,
+
+- [Aristotle by Harmonic](https://aristotle.harmonic.fun) created the first working version of many proofs.
+- Claude code is used in the process of refactoring proofs.
+
 For use with artificial intelligence, a system such as LEAN4 has the significant advantage of much reduced work in reviewing the output, due to proofs being checked by the LEAN4 kernel.
+Nevertheless, care must be taken that the AI does not run mallicious code, does not formalize the wrong thing and does not "cheat" in proofs (cheating can be prevented by using [Comparator](https://github.com/leanprover/comparator)).
+
+To address these issues,
+
+- All definitions (especially of e.g. universality-properties) are either written without AI or carefully reviewed manually.
+- Statements of main theorems (`public` and/or mentioned in section docstrings) are also carefully reviewed manually
+- Proofs are not always human-reviewed in detail as long as they look reasonable.
+  They are refactored to conform to Mathlib conventions and to be more readable than raw AI output.
