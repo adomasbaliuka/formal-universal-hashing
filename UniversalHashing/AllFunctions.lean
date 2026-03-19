@@ -39,7 +39,8 @@ theorem all_functions_strongly_universal_n (n : ℕ) :
             else f ⟨x, hx⟩, ?_, ?_⟩
         <;> simp [ha_inj.eq_iff]
         grind
-    simp_all [Fintype.card_subtype]
+    simp_all only [Fintype.card_subtype, Finset.filter_true, Finset.card_univ, Set.mem_range,
+      not_exists, Fintype.card_pi, Finset.prod_const]
     have : Finset.filter (fun x ↦ ∀ j : Fin n, ¬ha j = x) Finset.univ
       = Finset.univ \ Finset.image ha Finset.univ := by
       ext; simp [Finset.mem_sdiff, Finset.mem_image]
@@ -48,8 +49,11 @@ theorem all_functions_strongly_universal_n (n : ℕ) :
       Fintype.card_fin]
   by_cases h : Fintype.card Output = 0 <;> simp_all only [Nat.cast_pow, CharP.cast_eq_zero,
       Fintype.card_pi, Finset.prod_const, Finset.card_univ]
-  · cases n <;> simp_all [Fintype.card_eq_zero_iff]
-    exact absurd (Fintype.card_pos_iff.mpr ⟨b 0⟩) (by simp)
+  · cases n
+    · simp_all [Fintype.card_eq_zero_iff]
+    · simp_all only [Fintype.card_eq_zero_iff, ne_eq, Nat.add_eq_zero_iff, one_ne_zero, and_false,
+        not_false_eq_true, zero_pow, div_zero, pow_eq_zero_iff', true_and]
+      exact absurd (Fintype.card_pos_iff.mpr ⟨b 0⟩) (by simp)
   · rw [eq_div_iff (by positivity), ← pow_add, Nat.sub_add_cancel]
     simpa using Fintype.card_le_of_injective ha ha_inj
 

@@ -95,7 +95,7 @@ def ToeplitzMatrix.equiv_params {F : Type*} {m n : ℕ} [NeZero m] [NeZero n]
   left_inv := by
     intro M
     simp only [from_params, to_params]
-    apply Subtype.eq
+    apply Subtype.ext
     ext i j
     simp only [Matrix.of_apply]
     split_ifs <;> simp_all only [Nat.sub_sub] <;> apply M.prop

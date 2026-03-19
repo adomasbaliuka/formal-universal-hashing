@@ -26,7 +26,7 @@ open scoped BigOperators
 open LinearMap
 
 variable {𝕜 : Type*} [Field 𝕜]
-variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m]
 
 /-- Given a vector `v`, the linear map mapping a matrix `M` to `M *ᵥ v`. -/
 def mulVecMat (m : Type*) [Fintype m] [DecidableEq m] (v : n → 𝕜) :
@@ -39,6 +39,7 @@ theorem mulVecMat_surjective (m : Type*) [Fintype m] [DecidableEq m] {v : n → 
     Function.Surjective (mulVecMat m v) := by
   intro w
   obtain ⟨i, hi⟩ : ∃ i, v i ≠ 0 := Function.ne_iff.mp vne0
+  classical
   use Matrix.of (fun j k ↦ if k = i then (w j) / (v i) else 0)
   ext j
   calc (fun j_1 ↦ if j_1 = i then (w j) / (v i) else 0) ⬝ᵥ v

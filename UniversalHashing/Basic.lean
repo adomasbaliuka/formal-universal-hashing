@@ -106,10 +106,12 @@ theorem HashFamily.universal2_iff_probUniform (H : HashFamily Seed Input Output)
   · have h_div : (Fintype.card {i : Seed // H i x = H i y}) * Fintype.card Output
         ≤ Fintype.card Seed := by
       convert h hxy using 1
-    by_cases hOutput : Fintype.card Output = 0
-      <;> by_cases hSeed : Fintype.card Seed = 0 <;> simp_all
-    · simp_all [Fintype.card_eq_zero_iff ]
+    by_cases hOutput : Fintype.card Output = 0 <;> by_cases hSeed : Fintype.card Seed = 0
+    · simp_all
+    · simp_all only [mul_zero, zero_le, Fintype.card_eq_zero_iff, not_isEmpty_iff,
+      Fintype.card_eq_zero, CharP.cast_eq_zero, div_zero, ge_iff_le]
       exact False.elim <| hOutput.elim <| H hSeed.some x
+    · simp_all
     · field_simp
       norm_cast
   · contrapose! h
@@ -207,7 +209,7 @@ theorem HashFamily.stronglyUniversal2_stronglyUniversal_n_2
     simp_all only [ne_eq, Fin.forall_fin_two, Fin.isValue, as, Os]
 
 /-- `stronglyUniversal2` implies `universal2`. -/
-theorem HashFamily.universal2_of_stronglyUniversal2 [DecidableEq Seed]
+theorem HashFamily.universal2_of_stronglyUniversal2
     (H : HashFamily Seed Input Output) :
     H.stronglyUniversal2 → H.universal2 := by
   intro h
@@ -223,6 +225,7 @@ theorem HashFamily.universal2_of_stronglyUniversal2 [DecidableEq Seed]
   have h_sum :
       probUniform (fun i ↦ H i x = H i y)
       = ∑ a : Output, probUniform (fun i ↦ H i x = a ∧ H i y = a) := by
+    classical
     simp only [Fintype.card_subtype, probUniform]
     rw [← Finset.sum_div _ _ _, eq_comm]
     rw [← Nat.cast_sum, ← Finset.card_biUnion]
@@ -277,7 +280,10 @@ theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
     exact Fintype.card_congr (Equiv.ofBijective (fun s ↦ ⟨f s, by aesop⟩) ⟨
         fun a b h ↦ by have := hf.1 ( by aesop : f a = f b ) ; aesop,
         fun a ↦ by obtain ⟨ s, hs ⟩ := hf.2 a; aesop ⟩)
-  constructor <;> intro h x y hxy <;> have := h hxy <;> simp_all [Fintype.card_subtype]
-    <;> replace hf := congr_arg Multiset.card hf <;> aesop
+  constructor <;> intro h x y hxy <;> have := h hxy
+    <;> simp_all only [Multiset.bijective_iff_map_univ_eq_univ, ne_eq, Function.comp_apply,
+      Set.coe_setOf, Fintype.card_subtype, not_false_eq_true, ge_iff_le]
+    <;> replace hf := congr_arg Multiset.card hf
+    <;> aesop
 
 end SeedInputOutput
