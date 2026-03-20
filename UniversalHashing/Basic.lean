@@ -158,7 +158,7 @@ Equivalent statement of strongly-universal-2 using `probUniform`.
 A family H is `stronglyUniversal2` if for all distinct x ≠ y, given two outputs a and b,
 the probability to map `x ↦ a` and `y ↦ b` is exactly `1 / (|Output|^2)`.
 -/
-theorem HashFamily.stronglyUniversal2_iff_probUniform_of_inhabited [Nonempty Seed]
+theorem HashFamily.stronglyUniversal2_iff_probUniform [Nonempty Seed]
     (H : HashFamily Seed Input Output) :
     H.stronglyUniversal2
     ↔
@@ -221,7 +221,7 @@ theorem HashFamily.universal2_of_stronglyUniversal2
   have : Nonempty Seed := Fintype.card_pos_iff.mp (Nat.zero_lt_of_ne_zero seedNonempty)
   have h_prob : ∀ a : Output,
     probUniform (fun i ↦ H i x = a ∧ H i y = a) = 1 / (Fintype.card Output : ℚ)^2 :=
-      fun a ↦ H.stronglyUniversal2_iff_probUniform_of_inhabited.mp h hxy a a
+      fun a ↦ H.stronglyUniversal2_iff_probUniform.mp h hxy a a
   have h_sum :
       probUniform (fun i ↦ H i x = H i y)
       = ∑ a : Output, probUniform (fun i ↦ H i x = a ∧ H i y = a) := by
