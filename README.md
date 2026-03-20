@@ -29,8 +29,9 @@ See [Preliminary, auto-generated API-docs](https://adomasbaliuka.github.io/forma
 - [ ] Definitions of universal hashing
   + [x] Universal-2 (e.g. [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8))
   + [x] Strongly-universal
-  + [ ] Strongly-universal-n (e.g. [Wegman, Carter 1981](https://doi.org/10.1016/0022-0000(81)90033-7))
-  + [ ] ε-almost strongly universal
+  + [x] Strongly-universal-n (e.g. [Wegman, Carter 1981](https://doi.org/10.1016/0022-0000(81)90033-7))
+  + [x] ε-almost universal-2
+  + [x] ε-almost strongly universal-2
   + [ ] XOR-universal
   + [ ] ε-almost-Δ-universal (e.g. [Halevi, Krawczyk 2006](https://doi.org/10.1007/BFb0052345))
 - [ ] Proofs
