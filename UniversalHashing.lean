@@ -4,3 +4,4 @@ import UniversalHashing.Toeplitz
 import UniversalHashing.LinearModp
 import UniversalHashing.AllFunctions
 import UniversalHashing.AlmostUniversal
+import UniversalHashing.AlmostUniversalBounds
