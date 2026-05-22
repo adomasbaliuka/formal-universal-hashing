@@ -42,21 +42,14 @@ set_option autoImplicit false
 /--
 A **hash family** is a family of functions `Input → Output`.
 Rather than define it as a set of functions, we put the choice of function into a type `Seed`.
+
+Some authors include a probability distribution over `Seed` in the definition.
+We assume this distribution is always uniform.
+
+TODO comment more on this!
 -/
 abbrev HashFamily (Seed Input Output : Type*) : Type _ :=
   Seed → Input → Output
-
--- TODO delete, synthesized automatically.
--- We are considering cases with finitely many hash functions.
--- In terms of definitions, if all types are `Fintype`
--- and both `Seed` and `Input` have decidable equality,
--- then the hash family type is also a `Fintype`.
--- section TMP
--- variable (Seed Input Output : Type*)
---      [Fintype Seed] [DecidableEq Seed] [DecidableEq Input] [Fintype Input] [Fintype Output]
-
--- #synth Fintype (HashFamily Seed Input Output) -- works!
--- end TMP
 
 section SeedInputOutput
 
@@ -131,7 +124,8 @@ A hash family is **strongly-universal-n** (also called "n-wise independent") if
 - and n (not necessarily distinct) outputs `b₁, b₂, ...`,
 exactly ``|HashFamily|/(|Output|^n)`` functions take `a₁` to `b₁` `a₂` to `b₂`, etc.
 
-See [Wegman, Carter 1981](https://doi.org/10.1016/0022-0000(81)90033-7)
+See [WEGMAN1981265]
+[Wegman, Carter 1981](https://doi.org/10.1016/0022-0000(81)90033-7)
 -/
 def HashFamily.stronglyUniversal_n (n : ℕ) (H : HashFamily Seed Input Output) : Prop :=
   ∀ ⦃a : Fin n → Input⦄, a.Injective -- for n distinct Inputs `a₁, a₂, ...`

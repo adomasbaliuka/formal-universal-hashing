@@ -244,9 +244,9 @@ theorem HashFamily.uniform_of_stronglyUniversal2
   simp only [probUniform, h_eq]
   field_simp
 
-theorem HashFamily.almostStronglyUniversal2_eps_lower_bound
+theorem HashFamily.eps_ge_inv_card_of_almostStronglyUniversal2
     [Nonempty Seed] [Nontrivial Input]
-    {ε : ℚ} (H : HashFamily Seed Input Output)
+    {ε : ℚ} {H : HashFamily Seed Input Output}
     (h : H.almostStronglyUniversal2 ε) :
     (1 : ℚ) / Fintype.card Output ≤ ε := by
   obtain ⟨x, y, hxy⟩ := exists_pair_ne Input
