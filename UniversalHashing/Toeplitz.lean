@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Algebra.Polynomial.AlgebraMap
@@ -22,8 +27,8 @@ open scoped Nat
 
 set_option maxRecDepth 4000
 
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
+
+
 
 /--
 Main result:
@@ -71,9 +76,8 @@ theorem toeplitzModp_mulVec_isUniversal2 (m n p : ℕ) [NeZero m] [NeZero n]
         Finset.prod_const, Fintype.card_fin, smul_eq_mul, Nat.pow_eq_zero, hp_pos.ne',
         false_and, not_false_eq_true, mul_div_cancel_left₀, le_refl]
   rw [Nat.le_div_iff_mul_le] at h_card <;> norm_num [Fintype.card_pi] at *
-  · simp_all only [Matrix.mulVec_sub, sub_eq_iff_eq_add, zero_add]
-    exact h_card
-  · simp_all only [pow_pos]
+  · simp_all [Matrix.mulVec_sub, sub_eq_iff_eq_add, zero_add]
+  · simp_all [pow_pos]
 
 /-- Toeplitz hash, expressed using only bit vectors. -/
 def toeplitzHash (m n : ℕ) :
@@ -98,7 +102,7 @@ Proof by explicit computation, mapping two-bit vectors to 1-bit vectors.
 -/
 example : ¬ (toeplitzHash 2 1).stronglyUniversal2 := by
   simp only [toeplitzHash, HashFamily.stronglyUniversal2]
-  push_neg
+  push Not
   use 0, 1
   refine ⟨not_eq_of_beq_eq_false rfl, ?_⟩
   simp only [Nat.reduceAdd, Nat.add_one_sub_one, Fintype.card_pi, ZMod.card, Finset.prod_const,

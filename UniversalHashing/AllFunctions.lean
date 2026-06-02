@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import UniversalHashing.Basic
 
 /-!
@@ -8,7 +13,6 @@ This file just proves those statements for the sake if illustrating this fact an
 that the definitions are correct.
 -/
 
-set_option relaxedAutoImplicit false
 
 section
 

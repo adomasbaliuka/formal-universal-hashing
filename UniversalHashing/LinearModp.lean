@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Data.Rat.Star
@@ -10,8 +15,8 @@ import UniversalHashing.Basic
 Main result: `linearHashFamily.universal2`
 -/
 
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
+
+
 
 section LinearFamily
 
@@ -80,7 +85,7 @@ Proof by explicit computation for ``p = 2``.
 -/
 example : ¬ (linearHashFamily 2).stronglyUniversal2 := by
   unfold HashFamily.stronglyUniversal2 linearHashFamily
-  push_neg
+  push Not
   use 3, 4
   constructor
   · decide
