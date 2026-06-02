@@ -1,5 +1,10 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import UniversalHashing.Basic
-import Mathlib.Tactic
+import Mathlib
 
 /-!
 # ε-Almost Universal Hashing
@@ -74,8 +79,8 @@ These are relaxations of `HashFamily.universal2` and
 
 -/
 
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
+
+
 
 section SeedInputOutput
 
@@ -219,7 +224,9 @@ theorem HashFamily.stronglyUniversal2_iff_almostStronglyUniversal2
         ⟨b, Finset.mem_univ b, (h_term a b).lt_of_ne h_sum⟩
   · simp only [sq, div_eq_mul_inv, mul_inv_rev, mul_left_comm,
         Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-    by_cases hcard : Fintype.card Output = 0 <;> simp_all [sq]
+    by_cases hcard : Fintype.card Output = 0
+    · haveI : Nonempty Output := ⟨a⟩; exact absurd hcard Fintype.card_ne_zero
+    · field_simp [show (Fintype.card Output : ℚ) ≠ 0 from Nat.cast_ne_zero.mpr hcard]
 
 theorem HashFamily.uniform_of_stronglyUniversal2
     [Nonempty Seed] [Nontrivial Input]
@@ -253,9 +260,9 @@ theorem HashFamily.eps_ge_inv_card_of_almostStronglyUniversal2
   have h_sum : ∑ a : Output, ∑ b : Output,
       (Fintype.card {s : Seed | H s x = a ∧ H s y = b}) = Fintype.card Seed := by
     simp only [Fintype.card_eq_sum_ones, Finset.sum_sigma']
-    refine Finset.sum_bij (fun s _ ↦ s.2.2) (by simp) ?_ (by simp) (by simp)
-    simp only [Set.coe_setOf, Finset.univ_sigma_univ, Finset.mem_univ, Set.mem_setOf_eq,
-    forall_const]
+    refine Finset.sum_bij (fun s _ ↦ s.2.2) (by simp) ?_
+      (by intro b _; exact ⟨⟨H b x, H b y, ⟨b, rfl, rfl⟩⟩, Finset.mem_univ _, rfl⟩) (by simp)
+    simp only [Set.coe_setOf, Set.mem_setOf_eq]
     aesop
   have h_sum_le : ∑ a : Output, ∑ b : Output,
       (Fintype.card {s : Seed | H s x = a ∧ H s y = b}) ≤

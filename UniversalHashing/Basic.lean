@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.FieldSimp
@@ -35,8 +40,8 @@ A family H is strongly universal (also known as "pairwise independent") if
 -/
 
 set_option synthInstance.maxSize 128
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
+
+
 
 
 /--
@@ -115,7 +120,7 @@ theorem HashFamily.universal2_iff_probUniform (H : HashFamily Seed Input Output)
       simp_all only [ne_eq]
       apply Aesop.BuiltinRules.not_intro
       intro a
-      simp_all only [mul_zero, not_lt_zero'] )
+      simp_all only [mul_zero, not_lt_zero] )
     · exact Fintype.card_pos_iff.mpr ⟨Classical.choose (Finset.card_pos.mp (by nlinarith))⟩
 
 /--
@@ -260,8 +265,9 @@ theorem HashFamily.universal2_of_comp_injective_seed (H : HashFamily Seed Input 
     rw [Fintype.card_subtype, Fintype.card_subtype]
     rw [Finset.card_filter, Finset.card_filter]
     rw [← Equiv.sum_comp (Equiv.ofBijective f ⟨hf, Finite.injective_iff_surjective.mp hf⟩)]
-    simp_all [Equiv.ofBijective_apply, Set.mem_setOf_eq, Finset.sum_boole, Nat.cast_id,
-      Function.comp_apply]
+    simp_all only [Equiv.ofBijective_apply, Set.mem_setOf_eq, Function.comp_apply,
+      mul_eq_mul_right_iff]
+    exact Or.inl rfl
 
 theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
     (H : HashFamily Seed Input Output)

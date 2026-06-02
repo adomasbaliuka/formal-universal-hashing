@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import UniversalHashing.Basic
 
 /-!
@@ -8,7 +13,6 @@ This file just proves those statements for the sake if illustrating this fact an
 that the definitions are correct.
 -/
 
-set_option relaxedAutoImplicit false
 
 section
 
@@ -19,9 +23,7 @@ variable {Seed Input Output : Type*}
 /-- "All functions" as a hash family is strongly-universal-n for any n. -/
 theorem all_functions_strongly_universal_n (n : ℕ) :
     HashFamily.stronglyUniversal_n n (fun (s : Input → Output) (i : Input) ↦ s i) := by
-  intro
-  rename_i a ha
-  intro ha_inj b
+  intro ha ha_inj b
   have h_card : Fintype.card {f : Input → Output // ∀ j, f (ha j) = b j}
       = Fintype.card (Output) ^ (Fintype.card Input - n) := by
     have h_card : Fintype.card {f : Input → Output // ∀ j, f (ha j) = b j}

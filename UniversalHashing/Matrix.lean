@@ -1,11 +1,16 @@
-import Mathlib.Tactic
-import Mathlib.LinearAlgebra.Matrix.Defs
-import Mathlib.LinearAlgebra.Dimension.Finrank
-import Mathlib.Data.Matrix.Mul
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Matrix.Basic
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.Field.ZMod
-import Mathlib.Algebra.Group.Pointwise.Finset.Basic
+import Mathlib.Data.Fintype.Card
+import Mathlib.LinearAlgebra.Dimension.Finrank
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.LinearAlgebra.Matrix.Defs
+import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 
 import UniversalHashing.Basic
 
@@ -15,9 +20,6 @@ Proof that Binary Matrix-vector multiplication (using all matrices) is a Univers
 
 (This family is very big and therefore not useful in practice)
 -/
-
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
 
 section GenericField
 
@@ -81,9 +83,12 @@ There are `2 ^ (m * n)` binary mxn matrices.
 -/
 theorem h_card_matrices (p : ℕ) [Fact p.Prime] (m n : ℕ) :
     Fintype.card (Matrix (Fin m) (Fin n) (ZMod p)) = p ^ (m * n) := by
-  simp only [Matrix, Fintype.card_pi, ZMod.card, Finset.prod_const, Finset.card_univ,
-    Fintype.card_fin]
-  ring
+  simp only [Matrix]
+  have hn : Fintype.card (Fin n → ZMod p) = p ^ n := by
+    simp [Fintype.card_pi, ZMod.card, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  have hm : Fintype.card (Fin m → Fin n → ZMod p) = (p ^ n) ^ m := by
+    simp [Fintype.card_pi, hn, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  exact hm.trans (by ring)
 
 theorem finrank_matrix (p : ℕ) [Fact p.Prime] (m n : ℕ) :
     finrank (ZMod p) (Matrix (Fin m) (Fin n) (ZMod p)) = m * n := by
@@ -150,7 +155,7 @@ def matHash (q m n : ℕ) :
 /--
 Matrix-vector multiplication (using all matrices modulo `p`) is Universal2.
 -/
-theorem matHash_universal2atHash_universal2 (p : ℕ) [Fact p.Prime] (a b : ℕ) :
+theorem matHash_universal2 (p : ℕ) [Fact p.Prime] (a b : ℕ) :
     HashFamily.universal2 (matHash p a b) := by
   intro x y hxy
   -- Let $v = x - y$. Since $x \neq y$, $v \neq 0$.
@@ -163,11 +168,28 @@ theorem matHash_universal2atHash_universal2 (p : ℕ) [Fact p.Prime] (a b : ℕ)
   rcases b with (_ | b)
   · simp_all only [ne_eq, Matrix.empty_sub_empty, Matrix.zero_empty, not_true_eq_false, v]
   · convert mul_le_mul_of_nonneg_right h_card_ker.le (pow_nonneg (show 0 ≤ p by omega) a) using 1
-    · simp_all [matHash, Matrix.mulVec_sub, sub_eq_zero, v]
+    · have hset : {s : Matrix (Fin a) (Fin (b + 1)) (ZMod p) | s.mulVec x = s.mulVec y}
+          = {M | M.mulVec v = 0} := by
+        ext M
+        constructor
+        · intro h
+          change M.mulVec (x - y) = 0
+          rw [Matrix.mulVec_sub]; exact sub_eq_zero.mpr h
+        · intro h
+          change M.mulVec x = M.mulVec y
+          have hh : M.mulVec (x - y) = 0 := h
+          rw [Matrix.mulVec_sub] at hh; exact sub_eq_zero.mp hh
+      simp only [matHash, Fintype.card_pi, ZMod.card, Finset.prod_const, Finset.card_univ,
+          Fintype.card_fin]
+      congr 1
+      apply Fintype.card_congr
+      exact { toFun := fun ⟨s, hs⟩ => ⟨s, hset ▸ hs⟩
+              invFun := fun ⟨M, hM⟩ => ⟨M, hset.symm ▸ hM⟩
+              left_inv := fun _ => Subtype.ext rfl
+              right_inv := fun _ => Subtype.ext rfl }
     · erw [Fintype.card_pi]
       norm_num [pow_mul]
       ring_nf
-      ring
 
 /--
 Counterexample:

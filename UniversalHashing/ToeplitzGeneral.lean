@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import Mathlib.Tactic
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Algebra.Order.Ring.Star
@@ -13,11 +18,6 @@ This module defines Toeplitz matrices, i.e., matrices with constant diagonals.
 -/
 
 open scoped Nat
-
-set_option maxRecDepth 4000
-
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
 
 section DefToeplitz
 
@@ -42,23 +42,15 @@ The type of binary Toeplitz matrices, equipped with a Fintype instance.
 -/
 abbrev BinToeplitzMatrix (m n : ℕ) := ToeplitzMatrix m n (ZMod 2)
 
-theorem toeplitzAdd {R : Type*} [AddMonoid R] {m n : ℕ} (M M' : ToeplitzMatrix m n R) :
-    (M.val + M'.val).IsToeplitz := by
-  intros i i' j j' hij
-  have hM : M.val i j = M.val i' j' := by
-    apply M.property; exact hij
-  have hM' : M'.val i j = M'.val i' j' := by
-    apply M'.property; exact hij
-  simp only [Matrix.add_apply, hM, hM']
+theorem Matrix.IsToeplitz.add {R : Type*} [Add R] {m n : ℕ}
+    {M M' : Matrix (Fin m) (Fin n) R}
+    (hM : M.IsToeplitz) (hM' : M'.IsToeplitz) : (M + M').IsToeplitz :=
+  fun {i i' j j'} hij => by simp only [Matrix.add_apply, hM hij, hM' hij]
 
-theorem toeplitzSub {R : Type*} [AddGroup R] {m n : ℕ} (M M' : ToeplitzMatrix m n R) :
-    (M.val - M'.val).IsToeplitz := by
-  intros i i' j j' hij
-  have hM : M.val i j = M.val i' j' := by
-    apply M.property; exact hij
-  have hM' : M'.val i j = M'.val i' j' := by
-    apply M'.property; exact hij
-  simp only [Matrix.sub_apply, hM, hM']
+theorem Matrix.IsToeplitz.sub {R : Type*} [Sub R] {m n : ℕ}
+    {M M' : Matrix (Fin m) (Fin n) R}
+    (hM : M.IsToeplitz) (hM' : M'.IsToeplitz) : (M - M').IsToeplitz :=
+  fun {i i' j j'} hij => by simp only [Matrix.sub_apply, hM hij, hM' hij]
 
 end DefToeplitz
 
@@ -190,7 +182,7 @@ theorem toeplitz_poly_coeff {F : Type*} [Field F] {m n : ℕ}
          (∑ j : Fin n, u j • Polynomial.X ^ (n - 1 - j.val))) k =
     w ⬝ᵥ (Matrix.of (fun i j ↦ if i.val + (n - 1) - j.val = k then (1 : F) else 0) :
         Matrix (Fin m) (Fin n) F).mulVec u := by
-  simp only [Finset.sum_mul, Algebra.smul_mul_assoc, Polynomial.finset_sum_coeff,
+  simp only [Finset.sum_mul, Algebra.smul_mul_assoc, Polynomial.finsetSum_coeff,
     Polynomial.coeff_smul, Polynomial.coeff_mul, Polynomial.coeff_X_pow, smul_eq_mul, mul_ite,
     mul_one, mul_zero, ite_mul, one_mul, zero_mul, dotProduct, Matrix.mulVec, Matrix.of_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -259,10 +251,10 @@ theorem toeplitz_mulVec_surjective {F : Type*} [Field F] {m n : ℕ} [NeZero m] 
           natDegree_sum_smul_pow_le w, natDegree_sum_smul_pow_rev_le u]
   simp_all only [ne_eq, Polynomial.coeff_zero, mul_eq_zero, Polynomial.ext_iff]
   rcases h_poly_zero with h | h
-  · simp +zetaDelta only [Polynomial.finset_sum_coeff, Polynomial.coeff_smul,
+  · simp +zetaDelta only [Polynomial.finsetSum_coeff, Polynomial.coeff_smul,
         Polynomial.coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero] at *
     exact hw_ne (funext fun i ↦ by simpa [Fin.val_inj] using h i)
-  · simp +zetaDelta only [Polynomial.finset_sum_coeff, Polynomial.coeff_smul,
+  · simp +zetaDelta only [Polynomial.finsetSum_coeff, Polynomial.coeff_smul,
         Polynomial.coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero] at *
     obtain ⟨i, hi⟩ := Function.ne_iff.mp hu
     specialize h (n - 1 - i)

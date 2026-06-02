@@ -1,8 +1,13 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import Mathlib
 
 
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
+
+
 
 
 section Util
@@ -33,10 +38,9 @@ lemma rpow_one_sub_le_exp_neg (p t : ℝ) (hp1 : p ≤ 1) (ht : 0 ≤ t) :
         show 0 < 1 - p by exact lt_of_le_of_ne (by linarith) (Ne.symm ‹_›))])
 
 /--
-Gerber's inequality:
-`(1 - p) ^ t ≤ 1 - p*t + (p*t)²/2` for `0 ≤ p ≤ 1` and `t ≥ 0`.
+Second-order quadratic upper bound: `(1 - p) ^ t ≤ 1 - p*t + (p*t)²/2` for `0 ≤ p ≤ 1` and `t ≥ 0`.
 -/
-lemma gerber_inequality (p t : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (ht : 0 ≤ t) :
+lemma rpow_upper_bound_quadratic (p t : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (ht : 0 ≤ t) :
     (1 - p) ^ t ≤ 1 - p * t + (p * t) ^ 2 / 2 := by
   calc (1 - p) ^ t ≤ Real.exp (-p * t) :=
           rpow_one_sub_le_exp_neg p t hp1 ht
@@ -55,13 +59,13 @@ Lemma 21 from Pǎtraşcu and Thorup, "The Power of Simple Tabulation Hashing" (a
 The paper states a strict inequality, but the proof only establishes `≥`: equality holds at the
 boundary cases p = 0 or k = 0.
 -/
-theorem lemma21_1011_5200 (p k : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (gnn : 0 ≤ k)
+theorem one_sub_ge_rpow_of_pk_le_sqrt2_sub_one (p k : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (gnn : 0 ≤ k)
     (h : p * k ≤ (Real.sqrt 2) - 1) :
     1 - p * k ≥ (1 - p) ^ ((1 + p * k) * k) := by
   have gerber_bound :
       (1 - p) ^ ((1 + p * k) * k) ≤
         1 - p * (1 + p * k) * k + (p * (1 + p * k) * k) ^ 2 / 2 := by
-    convert gerber_inequality p ((1 + p * k) * k) hp0 hp1 (by positivity) using 1
+    convert rpow_upper_bound_quadratic p ((1 + p * k) * k) hp0 hp1 (by positivity) using 1
     ring_nf
   have h_quad : (p * k) ^ 2 + 2 * (p * k) - 1 ≤ 0 := by
     nlinarith [show 0 ≤ p * k by positivity,

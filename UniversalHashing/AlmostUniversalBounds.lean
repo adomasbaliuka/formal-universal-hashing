@@ -1,9 +1,10 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 import UniversalHashing.AlmostUniversal
 import UniversalHashing.Util
-import Mathlib.Data.Real.Basic
-import Mathlib.Analysis.Normed.Ring.Basic
-import Mathlib.Data.Real.StarOrdered
-import Mathlib.Tactic
 /-!
 # Bounds for ε-Almost Universal Hashing
 
@@ -26,8 +27,8 @@ import Mathlib.Tactic
 
 -/
 
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
+
+
 
 section StinsonBoundHelpers
 
@@ -72,7 +73,7 @@ private theorem sum_coincidence_eq
 end StinsonBoundHelpers
 
 /-- Per-pair version of the Fubini reordering: C(s,t)·(C(s,t)−1) as a double sum over inputs. -/
-private lemma coincidence_mul_pred_eq {Seed Input Output : Type*}
+private lemma card_mul_pred_eq_off_diag_sum {Seed Input Output : Type*}
   [Fintype Input]
   [DecidableEq Input] [DecidableEq Output] [Nontrivial Input]
   (H : HashFamily Seed Input Output) (s t : Seed) :
@@ -180,7 +181,7 @@ private theorem sum_coincidence_mul_pred_le
         (Fintype.card {x : Input // H s x = H t x} - 1) : ℚ) =
       ∑ x : Input, ∑ y : Input, ∑ s : Seed, ∑ t : Seed,
       (if x ≠ y ∧ H s x = H t x ∧ H s y = H t y then 1 else 0 : ℚ) := by
-    simp only [coincidence_mul_pred_eq H, ← Finset.sum_product']
+    simp only [card_mul_pred_eq_off_diag_sum H, ← Finset.sum_product']
     refine Finset.sum_nbij (fun x => (x.2.2.1, x.2.2.2, x.1, x.2.1)) ?_ ?_ ?_ ?_
     · intro a _; exact Finset.mem_univ _
     · rintro ⟨a1, a2, b1, b2⟩ _ ⟨c1, c2, d1, d2⟩ _; simp [Prod.mk.injEq]; tauto
@@ -354,10 +355,10 @@ theorem HashFamily.card_seed_lb_of_almostStronglyUniversal2
         simp only [probUniform, hSeq1, Nat.cast_one, div_one, one_div] at key
         rw [inv_eq_one_div, eq_div_iff] at key <;> norm_cast at * <;> aesop
       · simp_all [Fintype.card_le_one_iff]
-  · push_neg at hv
+  · push Not at hv
     have hOpos : (0 : ℚ) < Fintype.card Output := by
       by_contra hle
-      push_neg at hle
+      push Not at hle
       have hO0 : (Fintype.card Output : ℚ) = 0 := le_antisymm hle (Nat.cast_nonneg _)
       linarith [hv.2.1, show Fintype.card Output * ε * ((Fintype.card Input : ℚ) - 1) +
           Fintype.card Output - Fintype.card Input ≤ 0 by
