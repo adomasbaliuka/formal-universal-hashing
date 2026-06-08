@@ -19,11 +19,6 @@ This module defines Toeplitz matrices, i.e., matrices with constant diagonals.
 
 open scoped Nat
 
-set_option maxRecDepth 4000
-
-
-
-
 section DefToeplitz
 
 /-- A (finite) m×n matrix is ***Toeplitz** if all diagonals are constant. -/
@@ -47,23 +42,23 @@ The type of binary Toeplitz matrices, equipped with a Fintype instance.
 -/
 abbrev BinToeplitzMatrix (m n : ℕ) := ToeplitzMatrix m n (ZMod 2)
 
+protected theorem Matrix.IsToeplitz.add {R : Type*} [Add R] {m n : ℕ}
+    {M M' : Matrix (Fin m) (Fin n) R}
+    (hM : M.IsToeplitz) (hM' : M'.IsToeplitz) : (M + M').IsToeplitz :=
+  fun {i i' j j'} hij => by simp only [Matrix.add_apply, hM hij, hM' hij]
+
+protected theorem Matrix.IsToeplitz.sub {R : Type*} [Sub R] {m n : ℕ}
+    {M M' : Matrix (Fin m) (Fin n) R}
+    (hM : M.IsToeplitz) (hM' : M'.IsToeplitz) : (M - M').IsToeplitz :=
+  fun {i i' j j'} hij => by simp only [Matrix.sub_apply, hM hij, hM' hij]
+
 theorem toeplitzAdd {R : Type*} [AddMonoid R] {m n : ℕ} (M M' : ToeplitzMatrix m n R) :
-    (M.val + M'.val).IsToeplitz := by
-  intros i i' j j' hij
-  have hM : M.val i j = M.val i' j' := by
-    apply M.property; exact hij
-  have hM' : M'.val i j = M'.val i' j' := by
-    apply M'.property; exact hij
-  simp only [Matrix.add_apply, hM, hM']
+    (M.val + M'.val).IsToeplitz :=
+  Matrix.IsToeplitz.add M.property M'.property
 
 theorem toeplitzSub {R : Type*} [AddGroup R] {m n : ℕ} (M M' : ToeplitzMatrix m n R) :
-    (M.val - M'.val).IsToeplitz := by
-  intros i i' j j' hij
-  have hM : M.val i j = M.val i' j' := by
-    apply M.property; exact hij
-  have hM' : M'.val i j = M'.val i' j' := by
-    apply M'.property; exact hij
-  simp only [Matrix.sub_apply, hM, hM']
+    (M.val - M'.val).IsToeplitz :=
+  Matrix.IsToeplitz.sub M.property M'.property
 
 end DefToeplitz
 

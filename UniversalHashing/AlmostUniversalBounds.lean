@@ -5,10 +5,6 @@ Authors: Adomas Baliuka
 -/
 import UniversalHashing.AlmostUniversal
 import UniversalHashing.Util
-import Mathlib.Data.Real.Basic
-import Mathlib.Analysis.Normed.Ring.Basic
-import Mathlib.Data.Real.StarOrdered
-import Mathlib
 /-!
 # Bounds for ε-Almost Universal Hashing
 
@@ -77,7 +73,7 @@ private theorem sum_coincidence_eq
 end StinsonBoundHelpers
 
 /-- Per-pair version of the Fubini reordering: C(s,t)·(C(s,t)−1) as a double sum over inputs. -/
-private lemma coincidence_mul_pred_eq {Seed Input Output : Type*}
+private lemma card_mul_pred_eq_off_diag_sum {Seed Input Output : Type*}
   [Fintype Input]
   [DecidableEq Input] [DecidableEq Output] [Nontrivial Input]
   (H : HashFamily Seed Input Output) (s t : Seed) :
@@ -185,7 +181,7 @@ private theorem sum_coincidence_mul_pred_le
         (Fintype.card {x : Input // H s x = H t x} - 1) : ℚ) =
       ∑ x : Input, ∑ y : Input, ∑ s : Seed, ∑ t : Seed,
       (if x ≠ y ∧ H s x = H t x ∧ H s y = H t y then 1 else 0 : ℚ) := by
-    simp only [coincidence_mul_pred_eq H, ← Finset.sum_product']
+    simp only [card_mul_pred_eq_off_diag_sum H, ← Finset.sum_product']
     refine Finset.sum_nbij (fun x => (x.2.2.1, x.2.2.2, x.1, x.2.1)) ?_ ?_ ?_ ?_
     · intro a _; exact Finset.mem_univ _
     · rintro ⟨a1, a2, b1, b2⟩ _ ⟨c1, c2, d1, d2⟩ _; simp [Prod.mk.injEq]; tauto

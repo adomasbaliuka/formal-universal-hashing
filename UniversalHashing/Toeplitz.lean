@@ -25,11 +25,6 @@ with (binary) Toeplitz matrices is universal-2.
 
 open scoped Nat
 
-set_option maxRecDepth 4000
-
-
-
-
 /--
 Main result:
 Multiplication (mod p) by a random Toeplitz matrix is a universal-2 hash family.

@@ -23,9 +23,7 @@ variable {Seed Input Output : Type*}
 /-- "All functions" as a hash family is strongly-universal-n for any n. -/
 theorem all_functions_strongly_universal_n (n : ℕ) :
     HashFamily.stronglyUniversal_n n (fun (s : Input → Output) (i : Input) ↦ s i) := by
-  intro
-  rename_i a ha
-  intro ha_inj b
+  intro ha ha_inj b
   have h_card : Fintype.card {f : Input → Output // ∀ j, f (ha j) = b j}
       = Fintype.card (Output) ^ (Fintype.card Input - n) := by
     have h_card : Fintype.card {f : Input → Output // ∀ j, f (ha j) = b j}
