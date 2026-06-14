@@ -3,14 +3,20 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib
+import Batteries.Data.Vector.Lemmas
+import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Algebra.Order.Group.Nat
+import Mathlib.Data.Nat.Cast.Order.Basic
+import Mathlib.Data.Nat.Notation
+import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Data.ZMod.Defs
+import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Linarith.Frontend
 import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
 import UniversalHashing.BinConvolution.ConvolutionDefs
-
-set_option linter.minImports true
 
 /-- A root table is correct for an `m`-point NTT when every entry at index `len/2 + j`
     holds the twiddle factor `ω_{len}^j` in the Montgomery domain (multiplied by R),
@@ -107,7 +113,7 @@ lemma radix2Pass_preserves {n : ℕ} (k i : ℕ)
     induction k generalizing i a idx with
     | zero => rfl
     | succ k ih =>
-      unfold radix2Pass; simp +decide [*] 
+      unfold radix2Pass; simp +decide [*]
       grind
 
 /-

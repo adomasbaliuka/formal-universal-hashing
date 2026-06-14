@@ -3,9 +3,10 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib
-import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+import Batteries.Data.Vector.Lemmas
+import Mathlib.Algebra.Order.Ring.Nat
+import Mathlib.Algebra.Order.Sub.Basic
+import Mathlib.Tactic.Ring.RingNF
 import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
 import UniversalHashing.BinConvolution.ConvolutionDefs
 
