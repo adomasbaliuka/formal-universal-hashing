@@ -5,7 +5,10 @@ Authors: Adomas Baliuka
 -/
 import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.SolutionHelpers
+import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersRadix4Inner
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
@@ -34,7 +37,8 @@ lemma block_positions_arithmetic (n q : ℕ) (hq2 : q + 2 ≤ n) (hn64 : n < 64)
       b' * 2 ^ (q + 2) + j2 + 2 ^ (q + 1) + 2 ^ q ∧
     (b' + 1) * 2 ^ (q + 2) ≤ 2 ^ n := by
   have hs_eq : (len >>> 1).toNat = 2 ^ q := by
-    simp [UInt64.toNat_shiftRight, hlen, Nat.shiftRight_eq_div_pow, Nat.pow_succ']
+    simp only [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow, hlen, Nat.pow_succ',
+               (by decide : (1 : UInt64).toNat % 64 = 1), pow_one]; omega
   have hb'_i2_lt : b' * 2 ^ (q + 2) < 2 ^ n := by
     have : b' * 2 ^ (q + 2) < 2 ^ (n - q - 2) * 2 ^ (q + 2) := by
       nlinarith [Nat.two_pow_pos (q + 2), hb'_pow]
@@ -111,11 +115,12 @@ lemma radix4Middle_advances_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     intro b r hb idx hidx
     have hn64 : n < 64 := n_lt_64_of_pow2_nat m n hm_eq (hm_eq.symm ▸ h_dvd)
     have hs_eq : (len >>> 1).toNat = 2 ^ q := by
-      simp [UInt64.toNat_shiftRight, hlen, Nat.shiftRight_eq_div_pow, Nat.pow_succ']
+      simp only [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow, hlen, Nat.pow_succ',
+               (by decide : (1 : UInt64).toNat % 64 = 1), pow_one]; omega
     set s : UInt64 := len >>> 1 with hs_def
     have hlen_butterfly : len.toNat = 2 * s.toNat := by rw [hs_eq, hlen]; ring
     have hnBlocks_eq : m / (2 * len.toNat) = 2 ^ (n - q - 2) := by
-      rw [hm_eq, hlen, show (2 : ℕ) * 2 ^ (q + 1) = 2 ^ (q + 2) from by ring]
+      rw [hm_eq, hlen, (by ring : (2 : ℕ) * 2 ^ (q + 1) = 2 ^ (q + 2))]
       have h2 : (2 : ℕ) ^ n = 2 ^ (n - q - 2) * 2 ^ (q + 2) := by
         rw [← pow_add]; congr 1; omega
       rw [h2, Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
@@ -124,7 +129,7 @@ lemma radix4Middle_advances_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     have hj2_lt : j2nat < 2 ^ q := Nat.mod_lt _ (Nat.two_pow_pos q)
     have hquad_lt : quad < 4 := by
       have hrlt : r.val < 4 * 2 ^ q := by
-        have := r.isLt; linarith [show (2:ℕ)^(q+2) = 4 * 2^q from by ring]
+        have := r.isLt; linarith [(by ring : (2:ℕ)^(q+2) = 4 * 2^q)]
       exact Nat.div_lt_iff_lt_mul (Nat.two_pow_pos q) |>.mpr (by linarith)
     have hb_pow : b < 2 ^ (n - q - 2) := (show n - (q + 2) = n - q - 2 by omega) ▸ hb
     -- i2.toNat = b * 2 * len.toNat (needed to connect with radix4Inner_single_block_correct)
@@ -137,7 +142,7 @@ lemma radix4Middle_advances_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     have hb4_lt : ∀ k < 4, 4 * b + k < 2 ^ (n - q) := by
       intro k hk
       have h4 : 4 * 2 ^ (n - q - 2) = 2 ^ (n - q) := by
-        rw [show (4:ℕ) = 2^2 from by norm_num, ← pow_add]; congr 1; omega
+        rw [(by norm_num : (4:ℕ) = 2^2), ← pow_add]; congr 1; omega
       nlinarith [Nat.mul_lt_mul_of_pos_left hb_pow (show 0 < 4 by decide)]
     set ωq : ZMod mod32.toNat :=
       (primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / 2 ^ q)
@@ -198,8 +203,8 @@ When `len.toNat = 2^(q+1)` and `q + 3 < 64`, shifting left by 2 gives `2^(q+3)`.
 lemma outerLoop_len_shift (q : ℕ)
     (len : UInt64) (hlen : len.toNat = 2 ^ (q + 1)) (hq3 : q + 2 + 1 < 64) :
     (len <<< 2).toNat = 2 ^ (q + 2 + 1) := by
-  norm_num [ Nat.pow_succ', Nat.pow_mul, Nat.mul_mod, Nat.pow_mod, hlen ];
-  have := Nat.le_of_lt_succ ( show q < 61 by linarith ) ; interval_cases q <;> trivial;
+  norm_num [Nat.pow_succ', Nat.pow_mul, Nat.mul_mod, Nat.pow_mod, hlen]
+  have := Nat.le_of_lt_succ (show q < 61 by linarith) ; interval_cases q <;> trivial
 
 lemma outerLoop_from_inv {m : ℕ} (n q : ℕ)
     (hm_eq : m = 2 ^ n)
@@ -300,16 +305,16 @@ lemma outerLoop_stable_at_n {m : ℕ} (n : ℕ) (hm_eq : m = 2 ^ n)
     (h_inv : len.toNat = 0 ∨ ∃ j, n ≤ j ∧ j < 64 ∧ len.toNat = 2 ^ j) :
     nttInplace.outerLoop false roots a len fuel = a := by
   induction fuel generalizing len with
-  | zero => simp [nttInplace.outerLoop]
+  | zero => simp only [nttInplace.outerLoop]
   | succ f ih =>
     simp only [nttInplace.outerLoop]
     by_cases hgt : len.toNat * 2 > m
-    · simp [hgt]
+    · simp only [if_pos hgt]
     · simp only [hgt, ↓reduceIte]
       have h_nBlocks : m / (2 * len.toNat) = 0 := by
         rcases h_inv with h0 | ⟨j, hj_ge, _, hlenj⟩
-        · simp [h0]
-        · rw [hm_eq, hlenj, show 2 * 2 ^ j = 2 ^ (j + 1) from by ring]
+        · simp only [h0, mul_zero, Nat.div_zero]
+        · rw [hm_eq, hlenj, (by ring : 2 * 2 ^ j = 2 ^ (j + 1))]
           exact Nat.div_eq_of_lt (Nat.pow_lt_pow_right (by norm_num) (by omega))
       rw [h_nBlocks]
       change nttInplace.outerLoop false roots a (len <<< 2) f = a
@@ -321,8 +326,8 @@ lemma outerLoop_stable_at_n {m : ℕ} (n : ℕ) (hm_eq : m = 2 ^ n)
           (len <<< 2).toNat = 0 ∨ ∃ j, n ≤ j ∧ j < 64 ∧ (len <<< 2).toNat = 2 ^ j := by
         rw [hshift]
         rcases h_inv with h0 | ⟨j, hj_ge, hj_lt, hlenj⟩
-        · left; simp [h0]
-        · rw [hlenj, show 2 ^ j * 4 = 2 ^ (j + 2) from by ring]
+        · left; simp only [h0, zero_mul, Nat.zero_mod]
+        · rw [hlenj, (by ring : 2 ^ j * 4 = 2 ^ (j + 2))]
           by_cases hjb : j + 2 < 64
           · right; exact ⟨j + 2, by omega, hjb,
               Nat.mod_eq_of_lt (Nat.pow_lt_pow_right (by norm_num) hjb)⟩

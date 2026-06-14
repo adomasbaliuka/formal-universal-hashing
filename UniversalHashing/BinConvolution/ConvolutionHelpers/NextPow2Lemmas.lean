@@ -46,7 +46,6 @@ public lemma nextPow2_nat_ge (n : ℕ) : n ≤ Nat.nextPowerOfTwo n :=
 public lemma nextPow2_nat_le (n j : ℕ) (hn : n ≤ 2 ^ j) : Nat.nextPowerOfTwo n ≤ 2 ^ j :=
   go_le n 1 (by omega) j hn (Nat.one_le_pow j 2 (by omega)) Nat.isPowerOfTwo_one
 
--- TODO Mathlib has this as `Order.lt_two_iff`.
 private lemma lt_two_iff (x : ℕ) : x < 2 ↔ x ≤ 1 := by omega
 
 public lemma nextPowerOfTwo_eq_two_pow_clog (n : ℕ) : n.nextPowerOfTwo = 2 ^ Nat.clog 2 n := by
@@ -64,4 +63,3 @@ public lemma nextPowerOfTwo_eq_two_pow_clog (n : ℕ) : n.nextPowerOfTwo = 2 ^ N
   rw [hk] at this
   apply_fun Nat.clog 2 at this using Nat.clog_monotone 2
   simpa [clogpow] using this
-

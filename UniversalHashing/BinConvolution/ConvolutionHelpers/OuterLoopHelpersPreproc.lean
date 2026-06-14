@@ -5,7 +5,8 @@ Authors: Adomas Baliuka
 -/
 import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.SolutionHelpers
+import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForward
 
@@ -23,7 +24,7 @@ Bit-reversal permutation lemmas and `preprocessing_establishes_inv`, split out f
 @[simp] lemma bitRev_zero (n : ℕ) : bitRev n 0 = 0 := by
   induction n with
   | zero => rfl
-  | succ n ih => simp [bitRev, ih]
+  | succ n ih => simp only [bitRev, ih, Nat.zero_mod, mul_zero, Nat.add_zero]
 
 /-- `bitRev (n+1) (2^n*b + c) = 2 * bitRev n c + b` when `b ≤ 1` and `c < 2^n`. -/
 lemma bitRev_msb (n b c : ℕ) (hb : b ≤ 1) (hc : c < 2 ^ n) :
@@ -31,7 +32,7 @@ lemma bitRev_msb (n b c : ℕ) (hb : b ≤ 1) (hc : c < 2 ^ n) :
   induction n generalizing b c with
   | zero =>
     interval_cases c
-    interval_cases b <;> simp [bitRev]
+    interval_cases b <;> decide
   | succ n ih =>
     have hmod : (2 ^ (n + 1) * b + c) % 2 = c % 2 := by
       have h_pow_even : 2 ^ (n + 1) * b % 2 = 0 := by
@@ -40,12 +41,12 @@ lemma bitRev_msb (n b c : ℕ) (hb : b ≤ 1) (hc : c < 2 ^ n) :
       omega
     have hdiv : (2 ^ (n + 1) * b + c) / 2 = 2 ^ n * b + c / 2 := by
       have hrw : 2 ^ (n + 1) * b = 2 * (2 ^ n * b) := by ring
-      rw [hrw, show 2 * (2 ^ n * b) + c = c + (2 ^ n * b) * 2 from by ring]
+      rw [hrw, (by ring : 2 * (2 ^ n * b) + c = c + (2 ^ n * b) * 2)]
       rw [Nat.add_mul_div_right _ _ (by norm_num : (0 : ℕ) < 2)]
       omega
     rw [bitRev, hmod, hdiv]
     have hc' : c / 2 < 2 ^ n := by
-      have : c < 2 * 2 ^ n := by linarith [show 2 ^ (n + 1) = 2 * 2 ^ n from by ring]
+      have : c < 2 * 2 ^ n := by linarith [(by ring : 2 ^ (n + 1) = 2 * 2 ^ n)]
       omega
     rw [ih b (c / 2) hb hc']
     rw [show bitRev (n + 1) c = 2 ^ n * (c % 2) + bitRev n (c / 2) from rfl]
@@ -62,7 +63,7 @@ lemma bitRev_invol (n x : ℕ) (hx : x < 2 ^ n) : bitRev n (bitRev n x) = x := b
     have hbR : bitRev n (x / 2) < 2 ^ n := bitRev_lt n (x / 2)
     rw [bitRev_msb n (x % 2) (bitRev n (x / 2)) hxmod hbR]
     have hxdiv : x / 2 < 2 ^ n := by
-      have : x < 2 * 2 ^ n := by linarith [show 2 ^ (n + 1) = 2 * 2 ^ n from by ring]
+      have : x < 2 * 2 ^ n := by linarith [(by ring : 2 ^ (n + 1) = 2 * 2 ^ n)]
       omega
     rw [ih (x / 2) hxdiv]
     omega
@@ -86,7 +87,7 @@ lemma xor_two_pow_decompose (n b c : ℕ) (hb : b ≤ 1) (hc : c < 2 ^ n) :
       Nat.testBit_two_pow_mul_add (1 - b) hc, Nat.testBit_two_pow]
   by_cases hi : i < n
   · have hne : ¬ n = i := by omega
-    simp [hi, hne]
+    simp only [if_pos hi, decide_eq_false_iff_not.mpr hne, Bool.xor_false]
   · push Not at hi
     by_cases hi' : i = n
     · subst hi'
@@ -122,7 +123,7 @@ lemma bitRevNext_spec (n : ℕ) (i : ℕ) (hn1 : 1 ≤ n) (hn64 : n ≤ 64)
     have hbit' : bit = 2 ^ n := by rw [hbit]; simp
     have hbn : bitRev n (i / 2) < 2 ^ n := bitRev_lt _ _
     have hidiv : i / 2 < 2 ^ n := by
-      have : i < 2 * 2 ^ n := by linarith [show 2 ^ (n + 1) = 2 * 2 ^ n from by ring]
+      have : i < 2 * 2 ^ n := by linarith [(by ring : 2 ^ (n + 1) = 2 * 2 ^ n)]
       omega
     by_cases hbit0 : i % 2 = 0
     · have h_and_zero : j &&& bit = 0 := by
@@ -130,7 +131,7 @@ lemma bitRevNext_spec (n : ℕ) (i : ℕ) (hn1 : 1 ≤ n) (hn64 : n ≤ 64)
         rw [Nat.and_two_pow, Nat.testBit_lt_two_pow hbn]; simp
       have h_xor : j ^^^ bit = 2 ^ n + bitRev n (i / 2) := by
         rw [hj', hbit0, mul_zero, zero_add, hbit']
-        rw [show bitRev n (i / 2) = 2 ^ n * 0 + bitRev n (i / 2) from by ring,
+        rw [(by ring : bitRev n (i / 2) = 2 ^ n * 0 + bitRev n (i / 2)),
             xor_two_pow_decompose n 0 (bitRev n (i / 2)) (by norm_num) hbn]
         ring
       have hgoal : j ^^^ bit = bitRev (n + 1) (i + 1) := by
@@ -139,10 +140,10 @@ lemma bitRevNext_spec (n : ℕ) (i : ℕ) (hn1 : 1 ≤ n) (hn64 : n ≤ 64)
         have h2 : (i + 1) / 2 = i / 2 := by omega
         rw [h1, h2]; ring
       cases f with
-      | zero => simp [bitRevNext, hgoal]
+      | zero => simp only [bitRevNext, hgoal]
       | succ f' =>
         simp only [bitRevNext]
-        rw [show (j &&& bit == 0) = true from by simp [h_and_zero]]
+        rw [(by simp [h_and_zero] : (j &&& bit == 0) = true)]
         exact hgoal
     · have hbit1 : i % 2 = 1 := by omega
       have hn_pos : 1 ≤ n := by
@@ -152,14 +153,14 @@ lemma bitRevNext_spec (n : ℕ) (i : ℕ) (hn1 : 1 ≤ n) (hn64 : n ≤ 64)
         omega
       have h_and_eq : j &&& bit = 2 ^ n := by
         rw [hj', hbit', hbit1, mul_one]
-        rw [show 2 ^ n + bitRev n (i / 2) = 2 ^ n * 1 + bitRev n (i / 2) from by ring]
+        rw [(by ring : 2 ^ n + bitRev n (i / 2) = 2 ^ n * 1 + bitRev n (i / 2))]
         rw [and_two_pow_decompose n 1 (bitRev n (i / 2)) (by norm_num) hbn]
         ring
       have h_and_ne : j &&& bit ≠ 0 := by
         rw [h_and_eq]; exact (Nat.two_pow_pos n).ne'
       have h_xor : j ^^^ bit = bitRev n (i / 2) := by
         rw [hj', hbit', hbit1, mul_one]
-        rw [show 2 ^ n + bitRev n (i / 2) = 2 ^ n * 1 + bitRev n (i / 2) from by ring]
+        rw [(by ring : 2 ^ n + bitRev n (i / 2) = 2 ^ n * 1 + bitRev n (i / 2))]
         rw [xor_two_pow_decompose n 1 (bitRev n (i / 2)) (by norm_num) hbn]
         simp
       cases f with
@@ -167,16 +168,16 @@ lemma bitRevNext_spec (n : ℕ) (i : ℕ) (hn1 : 1 ≤ n) (hn64 : n ≤ 64)
       | succ f' =>
         have step : bitRevNext (f' + 1) j bit = bitRevNext f' (j ^^^ bit) (bit >>> 1) := by
           simp only [bitRevNext]
-          rw [show (j &&& bit == 0) = false from by simp [h_and_ne]]
+          rw [(by simp [h_and_ne] : (j &&& bit == 0) = false)]
           simp
         rw [step]
         have hbit'' : bit >>> 1 = 2 ^ (n - 1) := by
           rw [hbit', Nat.shiftRight_eq_div_pow, pow_one]
           rcases n with _ | n'
           · omega
-          · simp [pow_succ]
+          · simp only [pow_succ, Nat.succ_sub_one, Nat.mul_div_cancel _ two_pos]
         have hidiv1 : i / 2 + 1 < 2 ^ n := by
-          have : i + 1 < 2 * 2 ^ n := by linarith [show 2 ^ (n + 1) = 2 * 2 ^ n from by ring]
+          have : i + 1 < 2 * 2 ^ n := by linarith [(by ring : 2 ^ (n + 1) = 2 * 2 ^ n)]
           omega
         have hres := ih (i / 2) hn_pos (by omega) hidiv1 f' (by omega)
           (j ^^^ bit) (bit >>> 1) h_xor hbit''
@@ -378,7 +379,7 @@ lemma bitRevLoop_spec {N : ℕ} (hN64 : N < 64)
     -- bitRevLoop with k=0 returns v
     change (bitRevLoop 0 0 v 0)[0] = v[bitRev 0 0]
     unfold bitRevLoop
-    simp [bitRev]
+    simp only [bitRev]
   · have hN1 : 1 ≤ N := Nat.one_le_iff_ne_zero.mpr hN
     have h2Npos : 0 < 2 ^ N := Nat.two_pow_pos N
     -- Initial invariant at step 0
@@ -482,7 +483,7 @@ lemma preprocessing_establishes_inv {m : ℕ} (n : ℕ)
       -- idx = b * 2 + r.val
       -- Bounds
       have h_pow_eq : 2 * 2 ^ (n - 1) = 2 ^ n := by
-        rw [show (2 : ℕ) * 2 ^ (n - 1) = 2 ^ (n - 1 + 1) from by ring]
+        rw [(by ring : (2 : ℕ) * 2 ^ (n - 1) = 2 ^ (n - 1 + 1))]
         congr 1; omega
       have h2b1_lt : 2 * b + 1 < m := by
         rw [hm_eq]; have hb' : b < 2 ^ (n - 1) := hb; omega
@@ -495,13 +496,13 @@ lemma preprocessing_establishes_inv {m : ℕ} (n : ℕ)
         rw [hm_eq]; omega
       -- bitRev n (2b) and bitRev n (2b+1)
       have hbR_2b : bitRev n (2 * b) = bitRev (n - 1) b := by
-        conv_lhs => rw [show n = (n - 1) + 1 from by omega]
+        conv_lhs => rw [(by omega : n = (n - 1) + 1)]
         simp only [bitRev_succ]
         have hmod : (2 * b) % 2 = 0 := by omega
         have hdiv : (2 * b) / 2 = b := by omega
         rw [hmod, hdiv]; ring
       have hbR_2b1 : bitRev n (2 * b + 1) = 2 ^ (n - 1) + bitRev (n - 1) b := by
-        conv_lhs => rw [show n = (n - 1) + 1 from by omega]
+        conv_lhs => rw [(by omega : n = (n - 1) + 1)]
         simp only [bitRev_succ]
         have hmod : (2 * b + 1) % 2 = 1 := by omega
         have hdiv : (2 * b + 1) / 2 = b := by omega

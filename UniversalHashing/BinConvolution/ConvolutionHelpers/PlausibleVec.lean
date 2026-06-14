@@ -27,5 +27,3 @@ instance Fin.arbitraryNat {n : Nat} : Arbitrary (Fin n) where
     else
       throw (GenError.genError "Fin 0 has no elements")
 
--- abbrev vectorBounded {α} [LT α] [DecidableLT α] {n : Nat} (v : Vector α n) (bound : α): Prop :=
---   v.all (· < bound)

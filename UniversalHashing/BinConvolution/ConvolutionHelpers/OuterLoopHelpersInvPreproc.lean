@@ -5,7 +5,8 @@ Authors: Adomas Baliuka
 -/
 import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.SolutionHelpers
+import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvFull
@@ -67,7 +68,7 @@ lemma preprocessing_establishes_inv_inverse {m : ℕ} (n : ℕ)
       intro b r hb idx hidx
       have hr : r.val = 0 ∨ r.val = 1 := by have := r.isLt; omega
       have h_pow_eq : 2 * 2 ^ (n - 1) = 2 ^ n := by
-        rw [show (2 : ℕ) * 2 ^ (n - 1) = 2 ^ (n - 1 + 1) from by ring]
+        rw [(by ring : (2 : ℕ) * 2 ^ (n - 1) = 2 ^ (n - 1 + 1))]
         congr 1; omega
       have h2b1_lt : 2 * b + 1 < m := by
         rw [hm_eq]; have hb' : b < 2 ^ (n - 1) := hb; omega
@@ -79,13 +80,13 @@ lemma preprocessing_establishes_inv_inverse {m : ℕ} (n : ℕ)
       have hbRb1_idx_lt : 2 ^ (n - 1) + bitRev (n - 1) b < m := by
         rw [hm_eq]; omega
       have hbR_2b : bitRev n (2 * b) = bitRev (n - 1) b := by
-        conv_lhs => rw [show n = (n - 1) + 1 from by omega]
+        conv_lhs => rw [(by omega : n = (n - 1) + 1)]
         simp only [bitRev_succ]
         have hmod : (2 * b) % 2 = 0 := by omega
         have hdiv : (2 * b) / 2 = b := by omega
         rw [hmod, hdiv]; ring
       have hbR_2b1 : bitRev n (2 * b + 1) = 2 ^ (n - 1) + bitRev (n - 1) b := by
-        conv_lhs => rw [show n = (n - 1) + 1 from by omega]
+        conv_lhs => rw [(by omega : n = (n - 1) + 1)]
         simp only [bitRev_succ]
         have hmod : (2 * b + 1) % 2 = 1 := by omega
         have hdiv : (2 * b + 1) / 2 = b := by omega

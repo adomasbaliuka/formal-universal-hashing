@@ -14,12 +14,24 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
 
 /-! # Definitions for GF(2) circular convolution via NTT -/
 
+/-- The NTT-friendly prime modulus `p = 3·2³⁰ + 1 = 3221225473`, as a `UInt64`.
+Its `2³⁰`-smooth factor `p - 1 = 3·2³⁰` provides power-of-two roots of unity for the transform. -/
 def mod64 : UInt64 := 3 * 2^30 + 1
+
+/-- The same prime modulus `p = 3·2³⁰ + 1 = 3221225473` as `mod64`, but as a `UInt32`. -/
 def mod32 : UInt32 := 3 * 2^30 + 1
 
+/-- `5` is a primitive root of `(ZMod p)ˣ`, used to generate the NTT roots of unity. -/
 def primRoot : UInt64 := 5
+
+/-- Montgomery negated inverse `p' = -p⁻¹ mod 2³²` (`= 3221225471`), used by `montMul`. -/
 def montPprime : UInt32 := 3221225471
+
+/-- Montgomery `R² mod p` for radix `R = 2³²` (`= 1789569709`).
+`montMul a montR2` puts `a` into Montgomery form. -/
 def montR2 : UInt32 := 1789569709
+
+/-- Montgomery `R mod p = 2³² mod p` (`= 1073741823`); the Montgomery representation of `1`. -/
 def montR1 : UInt32 := 1073741823
 
 section MontgomeryArithmetic
@@ -40,13 +52,16 @@ section MontgomeryArithmetic
 
 @[inline] def toMont (a : UInt32) : UInt32 := montMul a montR2
 
--- Fuel-based powModU64; 64 rounds cover all UInt64 exponents.
+/-- Fuel-based square-and-multiply accumulator for modular exponentiation: with `fuel` rounds
+left it folds the remaining exponent bits `e` into the running result `r`, squaring base `b`
+each round. Called by `powModU64` with `fuel = 64`, enough for any `UInt64` exponent. -/
 def powModAuxU64 (mod_ : UInt64) : ℕ → UInt64 → UInt64 → UInt64 → UInt64
   | 0,   _, _, r => r
   | f+1, b, e, r =>
     if e == 0 then r
     else powModAuxU64 mod_ f (b * b % mod_) (e >>> 1) (if e &&& 1 != 0 then r * b % mod_ else r)
 
+/-- `base ^ exp mod mod_`, computed by square-and-multiply via `powModAuxU64`. -/
 def powModU64 (base exp mod_ : UInt64) : UInt64 :=
   powModAuxU64 mod_ 64 (base % mod_) exp 1
 

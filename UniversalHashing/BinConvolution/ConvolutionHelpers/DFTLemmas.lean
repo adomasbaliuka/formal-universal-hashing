@@ -21,14 +21,6 @@ variable {R : Type*} [CommRing R]
 noncomputable def dft (N : ℕ) (ω : R) (a : Fin N → R) (k : ℕ) : R :=
   ∑ j : Fin N, a j * ω ^ (j.val * k)
 
--- /-
--- Factoring a constant out of the DFT: if each input element is multiplied by `c`,
---     the DFT is multiplied by `c`.
--- -/
--- theorem dft_const_factor (N : ℕ) (ω c : R) (a : Fin N → R) (k : ℕ) :
---     dft N ω (fun j => c * a j) k = c * dft N ω a k := by
---   unfold dft; simp +decide [ mul_assoc, Finset.mul_sum _ _ _ ] ;
-
 /-
 The Danielson-Lanczos splitting identity:
     The DFT of a sequence of length 2N can be split into DFTs of its even and odd parts.
@@ -40,23 +32,23 @@ theorem dft_danielson_lanczos (N : ℕ) (ω : R) (a : Fin (2 * N) → R) (k : �
     dft (2 * N) ω a k =
       dft N (ω ^ 2) (fun j => a ⟨2 * j.val, by omega⟩) k +
       ω ^ k * dft N (ω ^ 2) (fun j => a ⟨2 * j.val + 1, by omega⟩) k := by
-  unfold dft;
-  simp only [mul_comm, Finset.mul_sum _ _ _];
-  rw [ show ( Finset.univ : Finset ( Fin ( 2 * N ) ) ) =
-      Finset.image ( fun x : Fin N => ⟨ 2 * x, by linarith [ Fin.is_lt x ] ⟩ ) Finset.univ ∪
-      Finset.image ( fun x : Fin N => ⟨ 2 * x + 1, by linarith [ Fin.is_lt x ] ⟩ )
-        Finset.univ from ?_, Finset.sum_union ];
-  · rw [ Finset.sum_image, Finset.sum_image ] <;> simp only [mul_comm];
-    · exact congrArg₂ ( · + · )
-          ( Finset.sum_congr rfl fun _ _ => by ring ) ( Finset.sum_congr rfl fun _ _ => by ring );
+  unfold dft
+  simp only [mul_comm, Finset.mul_sum _ _ _]
+  rw [show (Finset.univ : Finset (Fin (2 * N))) =
+      Finset.image (fun x : Fin N => ⟨2 * x, by linarith [Fin.is_lt x]⟩) Finset.univ ∪
+      Finset.image (fun x : Fin N => ⟨2 * x + 1, by linarith [Fin.is_lt x]⟩)
+        Finset.univ from ?_, Finset.sum_union]
+  · rw [Finset.sum_image, Finset.sum_image] <;> simp only [mul_comm]
+    · exact congrArg₂ (· + ·)
+          (Finset.sum_congr rfl fun _ _ => by ring) (Finset.sum_congr rfl fun _ _ => by ring)
     · exact fun x y h => by simp only [Fin.ext_iff] at h ⊢; omega
     · exact fun x y h => by simp only [Fin.ext_iff] at h ⊢; omega
-  · norm_num [ Finset.disjoint_right ];
-    exact fun a x => ne_of_apply_ne ( fun n => n % 2 ) ( by norm_num [ Nat.add_mod, Nat.mul_mod ] );
-  · ext ⟨ x, hx ⟩ ;
-    simp only [Finset.mem_univ, Finset.mem_union, Finset.mem_image, true_iff, true_and];
-    rcases Nat.even_or_odd' x with ⟨ c, rfl | rfl ⟩ <;> [ left; right ] <;>
-      exact ⟨ ⟨ c, by linarith ⟩, rfl ⟩
+  · norm_num [Finset.disjoint_right]
+    exact fun a x => ne_of_apply_ne (fun n => n % 2) (by norm_num [Nat.add_mod, Nat.mul_mod])
+  · ext ⟨x, hx⟩ 
+    simp only [Finset.mem_univ, Finset.mem_union, Finset.mem_image, true_iff, true_and]
+    rcases Nat.even_or_odd' x with ⟨c, rfl | rfl⟩ <;> [left; right] <;>
+      exact ⟨⟨c, by linarith⟩, rfl⟩
 
 /-
 The second-half Danielson-Lanczos identity:
@@ -102,126 +94,50 @@ theorem ref_ntt_eq_dft (n : ℕ) (ω : R)
     (a : Fin (2 ^ n) → R) (k : Fin (2 ^ n)) :
     ref_ntt n ω a k = dft (2 ^ n) ω a k.val := by
   induction n generalizing ω with
-  | zero => fin_cases k ; simp +decide [ dft, ref_ntt ];
+  | zero => simp only [dft, ref_ntt, Fin.fin_one_eq_zero, Fin.val_zero, mul_zero,
+      pow_zero, mul_one, Finset.sum_const, Finset.card_univ, Fintype.card_fin, one_smul]
   | succ n ih =>
-    simp only [ ref_ntt, dft ];
-    split_ifs with h;
-    · convert dft_danielson_lanczos ( 2 ^ n ) ω
-          ( fun j => a ( ⟨ j.val, by omega ⟩ : Fin ( 2 ^ ( n + 1 ) ) ) ) k.val using 1;
-      · rw [ dft_danielson_lanczos ];
-        · rcases n with ( _ | n )
+    simp only [ref_ntt, dft]
+    split_ifs with h
+    · convert dft_danielson_lanczos (2 ^ n) ω
+          (fun j => a (⟨j.val, by omega⟩ : Fin (2 ^ (n + 1)))) k.val using 1
+      · rw [dft_danielson_lanczos]
+        · rcases n with (_ | n)
           · simp only [ih _ (Or.inl rfl)]
           · simp only [ih _ (Or.inr (by
               have h := hω.resolve_left (by omega)
               simp only [Nat.add_sub_cancel]
-              rw [← pow_mul, show 2 * 2 ^ n = 2 ^ (n + 1) from by ring]
+              rw [← pow_mul, (by ring : 2 * 2 ^ n = 2 ^ (n + 1))]
               exact h))]
-      · convert dft_danielson_lanczos ( 2 ^ n ) ω
-            ( fun j => a ( ⟨ j.val, by omega ⟩ : Fin ( 2 ^ ( n + 1 ) ) ) ) k.val using 1;
+      · convert dft_danielson_lanczos (2 ^ n) ω
+            (fun j => a (⟨j.val, by omega⟩ : Fin (2 ^ (n + 1)))) k.val using 1
         refine Finset.sum_bij
-            ( fun j _ => ⟨ j, by linarith [ Fin.is_lt j, pow_succ' 2 n ] ⟩ ) ?_ ?_ ?_ ?_ <;>
+            (fun j _ => ⟨j, by linarith [Fin.is_lt j, pow_succ' 2 n]⟩) ?_ ?_ ?_ ?_ <;>
             simp only [Finset.mem_univ, implies_true, Fin.mk.injEq, Fin.eta]
         · exact fun a₁ _ a₂ _ h => Fin.ext h
         · exact fun b _ =>
-            ⟨ ⟨ b, by linarith [ Fin.is_lt b, pow_succ' 2 n ] ⟩, trivial, rfl ⟩
-    · rw [ ih, ih ];
-      · convert dft_danielson_lanczos_second_half ( 2 ^ n ) ω
-              ( hω.resolve_left ( by positivity ) )
-              ( fun j => a ⟨ j.val, by linarith [ Fin.is_lt j, pow_succ' 2 n ] ⟩ )
-              ( k.val - 2 ^ n ) using 1;
-        · convert dft_danielson_lanczos_second_half ( 2 ^ n ) ω
-                ( hω.resolve_left ( by positivity ) )
-                ( fun j => a ⟨ j.val, by linarith [ Fin.is_lt j, pow_succ' 2 n ] ⟩ )
-                ( k.val - 2 ^ n ) |> Eq.symm using 1;
-        · convert dft_danielson_lanczos_second_half ( 2 ^ n ) ω
-                ( hω.resolve_left ( by positivity ) )
-                ( fun j => a ⟨ j.val, by linarith [ Fin.is_lt j, pow_succ' 2 n ] ⟩ )
-                ( k.val - 2 ^ n ) using 1;
-          rw [ Nat.sub_add_cancel ( le_of_not_gt h ) ];
+            ⟨⟨b, by linarith [Fin.is_lt b, pow_succ' 2 n]⟩, trivial, rfl⟩
+    · rw [ih, ih]
+      · convert dft_danielson_lanczos_second_half (2 ^ n) ω
+              (hω.resolve_left (by positivity))
+              (fun j => a ⟨j.val, by linarith [Fin.is_lt j, pow_succ' 2 n]⟩)
+              (k.val - 2 ^ n) using 1
+        · convert dft_danielson_lanczos_second_half (2 ^ n) ω
+                (hω.resolve_left (by positivity))
+                (fun j => a ⟨j.val, by linarith [Fin.is_lt j, pow_succ' 2 n]⟩)
+                (k.val - 2 ^ n) |> Eq.symm using 1
+        · convert dft_danielson_lanczos_second_half (2 ^ n) ω
+                (hω.resolve_left (by positivity))
+                (fun j => a ⟨j.val, by linarith [Fin.is_lt j, pow_succ' 2 n]⟩)
+                (k.val - 2 ^ n) using 1
+          rw [Nat.sub_add_cancel (le_of_not_gt h)]
           refine Finset.sum_bij
-              ( fun j _ => ⟨ j, by linarith [ Fin.is_lt j, pow_succ' 2 n ] ⟩ ) ?_ ?_ ?_ ?_ <;>
+              (fun j _ => ⟨j, by linarith [Fin.is_lt j, pow_succ' 2 n]⟩) ?_ ?_ ?_ ?_ <;>
               simp only [Finset.mem_univ, implies_true, Fin.mk.injEq, Fin.eta]
           · exact fun a₁ _ a₂ _ h => Fin.ext h
           · exact fun b _ =>
-            ⟨ ⟨ b, by linarith [ Fin.is_lt b, pow_succ' 2 n ] ⟩, trivial, rfl ⟩
-      · cases n <;> simp_all +decide [ pow_succ', pow_mul ];
-      · cases n <;> simp_all +decide [ pow_succ', pow_mul ]
-
--- /-
--- The DFT of a single-element sequence is just the element itself.
--- -/
--- theorem dft_size_one (ω : R) (a : Fin 1 → R) (k : ℕ) :
---     dft 1 ω a k = a ⟨0, by omega⟩ := by
---   unfold dft;
---   simp +decide [ Fin.eq_zero ]
-
--- /-
--- The DFT of a two-element sequence with a primitive 2nd root of unity (ω = -1).
--- -/
--- theorem dft_size_two (a : Fin 2 → R) :
---     dft 2 (-1 : R) a 0 = a ⟨0, by omega⟩ + a ⟨1, by omega⟩ ∧
---     dft 2 (-1 : R) a 1 = a ⟨0, by omega⟩ - a ⟨1, by omega⟩ := by
---   unfold dft;
---   simp +decide [ Fin.sum_univ_succ, sub_eq_add_neg ]
-
--- /-
--- Radix-4 Danielson-Lanczos splitting identity:
---     The DFT of a sequence of length 4s splits into four DFTs of length s,
---     corresponding to residues 0, 1, 2, 3 mod 4.
--- -/
--- theorem dft_danielson_lanczos_radix4 (s : ℕ) (ω : R)
---     (g : Fin (4 * s) → R) (j2 : ℕ) :
---     dft (4 * s) ω g j2 =
---       dft s (ω ^ 4) (fun q => g ⟨4 * q.val, by omega⟩) j2 +
---       ω ^ j2 * dft s (ω ^ 4) (fun q => g ⟨4 * q.val + 1, by omega⟩) j2 +
---       ω ^ (2 * j2) * dft s (ω ^ 4) (fun q => g ⟨4 * q.val + 2, by omega⟩) j2 +
---       ω ^ (3 * j2) * dft s (ω ^ 4) (fun q => g ⟨4 * q.val + 3, by omega⟩) j2 := by
---   simp only [dft]
---   have step1 : ∑ j : Fin (4 * s), g j * ω ^ (j.val * j2) =
---       ∑ qr : Fin s × Fin 4,
---         g ⟨4 * qr.1.val + qr.2.val, by have := qr.1.isLt; have := qr.2.isLt; omega⟩ *
---         ω ^ ((4 * qr.1.val + qr.2.val) * j2) := by
---     symm
---     apply Finset.sum_nbij (fun (qr : Fin s × Fin 4) =>
---       (⟨4 * qr.1.val + qr.2.val, by have := qr.1.isLt; have := qr.2.isLt; omega⟩ :
---         Fin (4 * s)))
---     · intro _ _; simp
---     · intro ⟨q1, r1⟩ _ ⟨q2, r2⟩ _ h
---       simp only [Fin.mk.injEq] at h
---       have hr1 := r1.isLt; have hr2 := r2.isLt
---       simp only [Prod.mk.injEq, Fin.ext_iff]; constructor <;> omega
---     · intro ⟨j, hj⟩ _
---       simp only [Set.mem_image, Finset.mem_coe, Finset.mem_univ, true_and]
---       exact ⟨(⟨j / 4, by omega⟩, ⟨j % 4, Nat.mod_lt _ (by omega)⟩),
---              by simp [Fin.ext_iff]; omega⟩
---     · intro ⟨q, r⟩ _; rfl
---   rw [step1, Fintype.sum_prod_type]
---   simp only [Fin.sum_univ_four]
---   simp only [show (0 : Fin 4).val = 0 from rfl, show (1 : Fin 4).val = 1 from rfl,
---              show (2 : Fin 4).val = 2 from rfl, show (3 : Fin 4).val = 3 from rfl,
---              Nat.add_zero]
---   simp only [Finset.sum_add_distrib, Finset.mul_sum]
---   congr 1
---   · congr 1
---     · congr 1
---       · apply Finset.sum_congr rfl; intro q _
---         rw [show 4 * q.val * j2 = 4 * (q.val * j2) by ring, pow_mul ω 4 (q.val * j2)]
---       · apply Finset.sum_congr rfl; intro q _
---         rw [show (4 * q.val + 1) * j2 = j2 + 4 * (q.val * j2) by ring,
---             pow_add, pow_mul ω 4 (q.val * j2)]; ring
---     · apply Finset.sum_congr rfl; intro q _
---       rw [show (4 * q.val + 2) * j2 = 2 * j2 + 4 * (q.val * j2) by ring,
---           pow_add, pow_mul ω 4 (q.val * j2)]; ring
---   · apply Finset.sum_congr rfl; intro q _
---     rw [show (4 * q.val + 3) * j2 = 3 * j2 + 4 * (q.val * j2) by ring,
---         pow_add, pow_mul ω 4 (q.val * j2)]; ring
-
--- /-
--- DFT with permuted input equals DFT with permuted indices.
--- -/
--- theorem dft_permute (N : ℕ) (ω : R) (a : Fin N → R) (σ : Equiv.Perm (Fin N))
---     (hω : ω ^ N = 1) (k : ℕ) :
---     dft N ω (a ∘ σ) k = ∑ j : Fin N, a (σ j) * ω ^ (j.val * k) := by
---   unfold dft; aesop;
+            ⟨⟨b, by linarith [Fin.is_lt b, pow_succ' 2 n]⟩, trivial, rfl⟩
+      · cases n <;> simp_all [pow_succ', pow_mul]
+      · cases n <;> simp_all [pow_succ', pow_mul]
 
 end DFTAlgebra

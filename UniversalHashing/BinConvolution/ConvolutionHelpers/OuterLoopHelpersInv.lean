@@ -27,12 +27,12 @@ private lemma radix4Inner_split_at {m : ℕ} (inv : Bool)
       (butterfly4 (radix4Inner inv roots s_nat len_nat i2_nat j2nat 0 a)
         inv roots s_nat len_nat i2_nat j2nat) := by
   conv_lhs => rw [hs_split, radix4Inner_comp]
-  rw [show (0 : ℕ) + j2nat = j2nat from by omega, radix4Inner_comp]
+  rw [(by omega : (0 : ℕ) + j2nat = j2nat), radix4Inner_comp]
   have h_inner : radix4Inner inv roots s_nat len_nat i2_nat 1 j2nat
       (radix4Inner inv roots s_nat len_nat i2_nat j2nat 0 a) =
       butterfly4 (radix4Inner inv roots s_nat len_nat i2_nat j2nat 0 a)
         inv roots s_nat len_nat i2_nat j2nat := by
-    simp [radix4Inner]
+    simp only [radix4Inner]
   simp only [← hs_split]
   rw [h_inner]
 
@@ -57,7 +57,7 @@ private lemma inv_twiddle_eqs (q j2nat : ℕ) (hj2_lt : j2nat < 2 ^ q)
     le_of_lt (lt_of_lt_of_le hj2_lt (Nat.pow_le_pow_right (by decide) (by omega)))
   have hsum_le : 2 ^ q + j2nat ≤ 2 ^ (q + 2) := by
     have : 2 ^ q + 2 ^ q ≤ 2 ^ (q + 2) := by
-      rw [show 2 ^ (q + 2) = 2 ^ q + (2 ^ q + 2 ^ q + 2 ^ q) from by ring]; omega
+      rw [(by ring : 2 ^ (q + 2) = 2 ^ q + (2 ^ q + 2 ^ q + 2 ^ q))]; omega
     omega
   refine ⟨?_, ?_, ?_⟩
   · rw [twiddle_inv_exp (2 ^ (q + 1)) j2nat h_dvd_q1 hj2_le_q1 (Nat.two_pow_pos _)]
@@ -65,15 +65,238 @@ private lemma inv_twiddle_eqs (q j2nat : ℕ) (hj2_lt : j2nat < 2 ^ q)
     obtain ⟨K, hK⟩ := h_dvd_q2
     have hpos : (2 : ℕ) ^ (q + 2) > 0 := Nat.two_pow_pos _
     have hpos1 : (2 : ℕ) ^ (q + 1) > 0 := Nat.two_pow_pos _
-    rw [hK, Nat.mul_div_cancel_left _ hpos, show (2 : ℕ) ^ (q + 2) = 2 * 2 ^ (q + 1) from by ring,
-        show 2 * 2 ^ (q + 1) * K = 2 ^ (q + 1) * (2 * K) from by ring,
+    rw [hK, Nat.mul_div_cancel_left _ hpos, (by ring : (2 : ℕ) ^ (q + 2) = 2 * 2 ^ (q + 1)),
+        (by ring : 2 * 2 ^ (q + 1) * K = 2 ^ (q + 1) * (2 * K)),
         Nat.mul_div_cancel_left _ hpos1]; ring
   · exact twiddle_inv_exp (2 ^ (q + 2)) j2nat h_dvd_q2 hj2_le_q2 (Nat.two_pow_pos _)
-  · rw [show 2 ^ (q + 2) - 2 ^ q - j2nat = 2 ^ (q + 2) - (2 ^ q + j2nat) from by omega]
+  · rw [(by omega : 2 ^ (q + 2) - 2 ^ q - j2nat = 2 ^ (q + 2) - (2 ^ q + j2nat))]
     exact twiddle_inv_exp (2 ^ (q + 2)) (2 ^ q + j2nat) h_dvd_q2 hsum_le (Nat.two_pow_pos _)
 
-set_option maxHeartbeats 8000000 in
--- Proof requires extra heartbeats due to large case analysis in radix-4 correctness.
+private lemma block_idx_lt (q b k j2nat n : ℕ) (hk : k < 4)
+    (hb : b < 2 ^ (n - q - 2)) (hj2 : j2nat < 2 ^ q) (hq : q + 2 ≤ n) :
+    (4 * b + k) * 2 ^ q + j2nat < 2 ^ n := by
+  have h_lt_bp1 : (4 * b + k) * 2 ^ q + j2nat < (b + 1) * 2 ^ (q + 2) := by
+    have hk3 : k ≤ 3 := by omega
+    nlinarith [(by ring : 2 ^ (q + 2) = 4 * 2 ^ q), Nat.two_pow_pos q]
+  calc (4 * b + k) * 2 ^ q + j2nat
+      < (b + 1) * 2 ^ (q + 2) := h_lt_bp1
+    _ ≤ 2 ^ (n - q - 2) * 2 ^ (q + 2) := Nat.mul_le_mul_right _ (by omega)
+    _ = 2 ^ n := by rw [← pow_add]; congr 1; omega
+
+/-- Proves the four-way case split on `quad` for the inverse NTT block correctness.
+    Isolated so that `interval_cases` runs in a small context. -/
+private lemma radix4InnerInv_case_split {m : ℕ} (q b : ℕ) (r : Fin (2 ^ (q + 2)))
+    (j2nat quad : ℕ) (hp : Fact (Nat.Prime mod32.toNat))
+    (hj2_lt : j2nat < 2 ^ q) (hquad_lt : quad < 4)
+    (hr_decomp : r.val = quad * 2 ^ q + j2nat)
+    (hidx : b * 2 ^ (q + 2) + r.val < m)
+    (i2 j2u s len : UInt64)
+    (ω_top : ZMod mod32.toNat)
+    (f_ntt : Fin (2 ^ (q + 2)) → ZMod mod32.toNat)
+    (A_lead roots : Vector UInt32 m) (a : Vector UInt32 m)
+    (hbnd0 : (i2 + j2u).toNat < m)
+    (hbnd1 : (i2 + j2u + s).toNat < m)
+    (hbnd2 : (i2 + len + j2u).toNat < m)
+    (hbnd3 : (i2 + len + j2u + s).toNat < m)
+    (hbnd0_nat : i2.toNat + j2u.toNat < m)
+    (hbnd1_nat : i2.toNat + j2u.toNat + s.toNat < m)
+    (hbnd2_nat : i2.toNat + len.toNat + j2u.toNat < m)
+    (hbnd3_nat : i2.toNat + len.toNat + j2u.toNat + s.toNat < m)
+    (h_i2_j2_toNat : (i2 + j2u).toNat = b * 2 ^ (q + 2) + j2nat)
+    (h_i2_j2_s_toNat : (i2 + j2u + s).toNat = b * 2 ^ (q + 2) + j2nat + 2 ^ q)
+    (h_i2_len_j2_toNat : (i2 + len + j2u).toNat = b * 2 ^ (q + 2) + j2nat + 2 ^ (q + 1))
+    (h_i2_len_j2_s_toNat :
+        (i2 + len + j2u + s).toNat = b * 2 ^ (q + 2) + j2nat + 2 ^ (q + 1) + 2 ^ q)
+    (hj2u_toNat : j2u.toNat = j2nat)
+    (h_add0 : (i2 + j2u).toNat = i2.toNat + j2u.toNat)
+    (h_add1 : (i2 + j2u + s).toNat = i2.toNat + j2u.toNat + s.toNat)
+    (h_add2 : (i2 + len + j2u).toNat = i2.toNat + len.toNat + j2u.toNat)
+    (h_add3 : (i2 + len + j2u + s).toNat = i2.toNat + len.toNat + j2u.toNat + s.toNat)
+    (h_split :
+        radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat 0 a =
+        radix4Inner true roots s.toNat len.toNat i2.toNat (s.toNat - j2nat - 1) (j2nat + 1)
+          (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat j2nat))
+    (h_trailing_pos0 : ∀ B : Vector UInt32 m,
+        (radix4Inner true roots s.toNat len.toNat i2.toNat (s.toNat - j2nat - 1)
+            (j2nat + 1) B)[(i2 + j2u).toNat]'hbnd0 = B[(i2 + j2u).toNat]'hbnd0)
+    (h_trailing_pos1 : ∀ B : Vector UInt32 m,
+        (radix4Inner true roots s.toNat len.toNat i2.toNat (s.toNat - j2nat - 1)
+            (j2nat + 1) B)[(i2 + j2u + s).toNat]'hbnd1 = B[(i2 + j2u + s).toNat]'hbnd1)
+    (h_trailing_pos2 : ∀ B : Vector UInt32 m,
+        (radix4Inner true roots s.toNat len.toNat i2.toNat (s.toNat - j2nat - 1)
+            (j2nat + 1) B)[(i2 + len + j2u).toNat]'hbnd2 = B[(i2 + len + j2u).toNat]'hbnd2)
+    (h_trailing_pos3 : ∀ B : Vector UInt32 m,
+        (radix4Inner true roots s.toNat len.toNat i2.toNat (s.toNat - j2nat - 1)
+            (j2nat + 1) B)[(i2 + len + j2u + s).toNat]'hbnd3 =
+            B[(i2 + len + j2u + s).toNat]'hbnd3)
+    (hbf0 : (((butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
+                  j2u.toNat)[i2.toNat + j2u.toNat]'hbnd0_nat).toNat : ZMod mod32.toNat) =
+        ref_ntt q (ω_top ^ 4)
+            (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val, fin_4mul_lt q j⟩)
+            ⟨j2nat, hj2_lt⟩ +
+          (primRoot.toNat : ZMod mod32.toNat) ^
+              ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) *
+            ref_ntt q (ω_top ^ 4)
+              (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 2, fin_4mul2_lt q j⟩)
+              ⟨j2nat, hj2_lt⟩ +
+          (primRoot.toNat : ZMod mod32.toNat) ^
+              ((mod64.toNat - 1) / (2 * len.toNat) * (2 * len.toNat - j2u.toNat)) *
+            (ref_ntt q (ω_top ^ 4)
+                (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 1, fin_4mul1_lt q j⟩)
+                ⟨j2nat, hj2_lt⟩ +
+              (primRoot.toNat : ZMod mod32.toNat) ^
+                  ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) *
+                ref_ntt q (ω_top ^ 4)
+                  (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 3, fin_4mul3_lt q j⟩)
+                  ⟨j2nat, hj2_lt⟩))
+    (hbf1 : (((butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
+                  j2u.toNat)[i2.toNat + j2u.toNat + s.toNat]'hbnd1_nat).toNat :
+                ZMod mod32.toNat) =
+        ref_ntt q (ω_top ^ 4)
+            (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val, fin_4mul_lt q j⟩)
+            ⟨j2nat, hj2_lt⟩ -
+          (primRoot.toNat : ZMod mod32.toNat) ^
+              ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) *
+            ref_ntt q (ω_top ^ 4)
+              (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 2, fin_4mul2_lt q j⟩)
+              ⟨j2nat, hj2_lt⟩ +
+          (primRoot.toNat : ZMod mod32.toNat) ^
+              ((mod64.toNat - 1) / (2 * len.toNat) *
+                (2 * len.toNat - s.toNat - j2u.toNat)) *
+            (ref_ntt q (ω_top ^ 4)
+                (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 1, fin_4mul1_lt q j⟩)
+                ⟨j2nat, hj2_lt⟩ -
+              (primRoot.toNat : ZMod mod32.toNat) ^
+                  ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) *
+                ref_ntt q (ω_top ^ 4)
+                  (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 3, fin_4mul3_lt q j⟩)
+                  ⟨j2nat, hj2_lt⟩))
+    (hbf2 : (((butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
+                  j2u.toNat)[i2.toNat + len.toNat + j2u.toNat]'hbnd2_nat).toNat :
+                ZMod mod32.toNat) =
+        ref_ntt q (ω_top ^ 4)
+            (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val, fin_4mul_lt q j⟩)
+            ⟨j2nat, hj2_lt⟩ +
+          (primRoot.toNat : ZMod mod32.toNat) ^
+              ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) *
+            ref_ntt q (ω_top ^ 4)
+              (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 2, fin_4mul2_lt q j⟩)
+              ⟨j2nat, hj2_lt⟩ -
+          (primRoot.toNat : ZMod mod32.toNat) ^
+              ((mod64.toNat - 1) / (2 * len.toNat) * (2 * len.toNat - j2u.toNat)) *
+            (ref_ntt q (ω_top ^ 4)
+                (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 1, fin_4mul1_lt q j⟩)
+                ⟨j2nat, hj2_lt⟩ +
+              (primRoot.toNat : ZMod mod32.toNat) ^
+                  ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) *
+                ref_ntt q (ω_top ^ 4)
+                  (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 3, fin_4mul3_lt q j⟩)
+                  ⟨j2nat, hj2_lt⟩))
+    (hbf3 : (((butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
+                  j2u.toNat)[i2.toNat + len.toNat + j2u.toNat + s.toNat]'hbnd3_nat).toNat :
+                ZMod mod32.toNat) =
+        ref_ntt q (ω_top ^ 4)
+            (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val, fin_4mul_lt q j⟩)
+            ⟨j2nat, hj2_lt⟩ -
+          (primRoot.toNat : ZMod mod32.toNat) ^
+              ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) *
+            ref_ntt q (ω_top ^ 4)
+              (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 2, fin_4mul2_lt q j⟩)
+              ⟨j2nat, hj2_lt⟩ -
+          (primRoot.toNat : ZMod mod32.toNat) ^
+              ((mod64.toNat - 1) / (2 * len.toNat) *
+                (2 * len.toNat - s.toNat - j2u.toNat)) *
+            (ref_ntt q (ω_top ^ 4)
+                (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 1, fin_4mul1_lt q j⟩)
+                ⟨j2nat, hj2_lt⟩ -
+              (primRoot.toNat : ZMod mod32.toNat) ^
+                  ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) *
+                ref_ntt q (ω_top ^ 4)
+                  (fun j : Fin (2 ^ q) => f_ntt ⟨4 * j.val + 3, fin_4mul3_lt q j⟩)
+                  ⟨j2nat, hj2_lt⟩))
+    (h_tau1 : (primRoot.toNat : ZMod mod32.toNat) ^
+        ((mod64.toNat - 1) / len.toNat * (len.toNat - j2u.toNat)) = (ω_top ^ 2) ^ j2nat)
+    (h_tau2 : (primRoot.toNat : ZMod mod32.toNat) ^
+        ((mod64.toNat - 1) / (2 * len.toNat) * (2 * len.toNat - j2u.toNat)) = ω_top ^ j2nat)
+    (h_tau3 : (primRoot.toNat : ZMod mod32.toNat) ^
+        ((mod64.toNat - 1) / (2 * len.toNat) * (2 * len.toNat - s.toNat - j2u.toNat)) =
+        ω_top ^ (2 ^ q + j2nat)) :
+    ((radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+          0 a)[b * 2 ^ (q + 2) + r.val]'hidx).toNat =
+      ref_ntt (q + 2) ω_top f_ntt r := by
+  haveI := hp
+  interval_cases quad
+  · -- quad = 0: position is (i2 + j2u).toNat = b*2^(q+2) + j2nat
+    have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + j2u).toNat := by
+      rw [h_i2_j2_toNat, hr_decomp]; ring
+    have hsplit_idx :
+        (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+            0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
+        (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
+            j2u.toNat)[i2.toNat + j2u.toNat]'hbnd0_nat := by
+      have h1 : (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+              0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
+          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+              0 a)[(i2 + j2u).toNat]'hbnd0 := getElem_congr_idx hidx_eq
+      rw [h1, h_split, h_trailing_pos0, ← hj2u_toNat, getElem_congr_idx h_add0]
+    rw [hsplit_idx, hbf0, h_tau1, h_tau2]
+    have hr_eq : r = ⟨j2nat, pow2q_lt_q2 q j2nat hj2_lt⟩ :=
+      Fin.ext (hr_decomp.trans (by ring))
+    rw [hr_eq, ref_ntt_radix4_q0]
+  · -- quad = 1: position is (i2 + j2u + s).toNat
+    have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + j2u + s).toNat := by
+      rw [h_i2_j2_s_toNat, hr_decomp]; ring
+    have hsplit_idx :
+        (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+            0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
+        (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
+            j2u.toNat)[i2.toNat + j2u.toNat + s.toNat]'hbnd1_nat := by
+      have h1 : (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+              0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
+          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+              0 a)[(i2 + j2u + s).toNat]'hbnd1 := getElem_congr_idx hidx_eq
+      rw [h1, h_split, h_trailing_pos1, ← hj2u_toNat, getElem_congr_idx h_add1]
+    rw [hsplit_idx, hbf1, h_tau1, h_tau3]
+    have hr_eq : r = ⟨j2nat + 2 ^ q, pow2q_add_q_lt_q2 q j2nat hj2_lt⟩ :=
+      Fin.ext (hr_decomp.trans (by ring))
+    rw [hr_eq, ref_ntt_radix4_q1 q ω_top _ j2nat hj2_lt,
+        show (2 : ℕ) ^ q + j2nat = j2nat + 2 ^ q from Nat.add_comm _ _]
+  · -- quad = 2: position is (i2 + len + j2u).toNat
+    have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + len + j2u).toNat := by
+      rw [h_i2_len_j2_toNat, hr_decomp]; ring
+    have hsplit_idx :
+        (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+            0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
+        (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
+            j2u.toNat)[i2.toNat + len.toNat + j2u.toNat]'hbnd2_nat := by
+      have h1 : (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+              0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
+          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+              0 a)[(i2 + len + j2u).toNat]'hbnd2 := getElem_congr_idx hidx_eq
+      rw [h1, h_split, h_trailing_pos2, ← hj2u_toNat, getElem_congr_idx h_add2]
+    rw [hsplit_idx, hbf2, h_tau1, h_tau2]
+    have hr_eq : r = ⟨j2nat + 2 ^ (q + 1), pow2q_add_q1_lt_q2 q j2nat hj2_lt⟩ :=
+      Fin.ext (hr_decomp.trans (by ring))
+    rw [hr_eq, ref_ntt_radix4_q2]
+  · -- quad = 3: position is (i2 + len + j2u + s).toNat
+    have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + len + j2u + s).toNat := by
+      rw [h_i2_len_j2_s_toNat, hr_decomp]; ring
+    have hsplit_idx :
+        (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+            0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
+        (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
+            j2u.toNat)[i2.toNat + len.toNat + j2u.toNat + s.toNat]'hbnd3_nat := by
+      have h1 : (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+              0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
+          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
+              0 a)[(i2 + len + j2u + s).toNat]'hbnd3 := getElem_congr_idx hidx_eq
+      rw [h1, h_split, h_trailing_pos3, ← hj2u_toNat, getElem_congr_idx h_add3]
+    rw [hsplit_idx, hbf3, h_tau1, h_tau3]
+    have hr_eq : r = ⟨j2nat + 2 ^ q + 2 ^ (q + 1), pow2q_add_q_q1_lt_q2 q j2nat hj2_lt⟩ :=
+      Fin.ext (hr_decomp.trans (by ring))
+    rw [hr_eq, ref_ntt_radix4_q3 q ω_top _ j2nat hj2_lt,
+        show (2 : ℕ) ^ q + j2nat = j2nat + 2 ^ q from Nat.add_comm _ _]
+
 lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     (hm_eq : m = 2 ^ n)
     (v : Vector UInt32 m)
@@ -107,11 +330,12 @@ lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 �
   -- Setup basic parameters (mirrors radix4Middle_advances_inv)
   have hn64 : n < 64 := n_lt_64_of_pow2_nat m n hm_eq hm_dvd
   have hs_eq : (len >>> 1).toNat = 2 ^ q := by
-    simp [UInt64.toNat_shiftRight, hlen, Nat.shiftRight_eq_div_pow, Nat.pow_succ']
+    simp only [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow, hlen, Nat.pow_succ',
+               (by decide : (1 : UInt64).toNat % 64 = 1), pow_one]; omega
   set s : UInt64 := len >>> 1 with hs_def
   have hlen_butterfly : len.toNat = 2 * s.toNat := by rw [hs_eq, hlen]; ring
   have hdvd : 2 * len.toNat ∣ m := by
-    rw [hm_eq, hlen, show 2 * 2 ^ (q + 1) = 2 ^ (q + 2) from by ring]
+    rw [hm_eq, hlen, (by ring : 2 * 2 ^ (q + 1) = 2 ^ (q + 2))]
     exact pow_dvd_pow 2 hq2
   have hN_le : m ≤ 2 ^ 64 :=
     le_of_lt (by rw [hm_eq]; exact Nat.pow_lt_pow_right (by norm_num) hn64)
@@ -170,13 +394,9 @@ lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 �
   have hpos1_match : (i2 + j2u + s).toNat = (4 * b + 1) * 2 ^ q + j2nat := by
     rw [h_i2_j2_s_toNat]; ring
   have hpos2_match : (i2 + len + j2u).toNat = (4 * b + 2) * 2 ^ q + j2nat := by
-    rw [h_i2_len_j2_toNat]
-    have : (2 : ℕ) ^ (q + 1) = 2 * 2 ^ q := by ring
-    rw [this]; ring
+    rw [h_i2_len_j2_toNat]; ring
   have hpos3_match : (i2 + len + j2u + s).toNat = (4 * b + 3) * 2 ^ q + j2nat := by
-    rw [h_i2_len_j2_s_toNat]
-    have h1 : (2 : ℕ) ^ (q + 1) = 2 * 2 ^ q := by ring
-    rw [h1]; ring
+    rw [h_i2_len_j2_s_toNat]; ring
   have hb_idx_eq : (b * 2 ^ (q + 2) + r.val) = b * 2 ^ (q + 2) + quad * 2 ^ q + j2nat := by
     rw [hr_decomp]; ring
   -- Split radix4Inner into leading (j2nat steps), butterfly at j2u, and trailing
@@ -225,12 +445,13 @@ lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 �
                 posval = b * 2 ^ (q + 2) + j2nat + 2 ^ (q + 1) + 2 ^ q →
       (i2 + j2.toUInt64).toNat ≠ posval ∧ (i2 + j2.toUInt64 + s).toNat ≠ posval ∧
       (i2 + len + j2.toUInt64).toNat ≠ posval ∧
-      (i2 + len + j2.toUInt64 + s).toNat ≠ posval := by
-    intro j2 hj2 hj2_ne posval hpos
-    rw [h_pos0_gen j2 hj2, h_pos1_gen j2 hj2, h_pos2_gen j2 hj2, h_pos3_gen j2 hj2]
-    have hpow_e : 2 ^ (q + 2) = 2 ^ q + 2 ^ q + 2 ^ q + 2 ^ q := by ring
-    have hpow1 : 2 ^ (q + 1) = 2 ^ q + 2 ^ q := by ring
-    rcases hpos with h | h | h | h <;> subst h <;> refine ⟨?_, ?_, ?_, ?_⟩ <;> omega
+      (i2 + len + j2.toUInt64 + s).toNat ≠ posval :=
+    fun j2 hj2 hj2_ne posval hpos =>
+      let res := radix4_block_ne_pos q b j2 j2nat hj2 hj2_lt hj2_ne posval hpos
+      ⟨h_pos0_gen j2 hj2 ▸ res.1,
+       h_pos1_gen j2 hj2 ▸ res.2.1,
+       h_pos2_gen j2 hj2 ▸ res.2.2.1,
+       h_pos3_gen j2 hj2 ▸ res.2.2.2⟩
   -- Combinator: radix4Inner with any range doesn't modify butterfly positions
   have h_ne_at : ∀ (B : Vector UInt32 m) (nsteps start posval : ℕ) (hbnd : posval < m),
       (posval = b * 2 ^ (q + 2) + j2nat ∨ posval = b * 2 ^ (q + 2) + j2nat + 2 ^ q ∨
@@ -245,63 +466,73 @@ lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 �
       s.toNat len.toNat i2.toNat nsteps start posval hbnd
     · intro j2 hlo hhi; exact h_bnd_gen_nat j2 (hlt_range j2 hlo hhi)
     · intro j2 hlo hhi
-      simp only [hi2_toNat, hs_eq, hlen]
       have hj2lt := hlt_range j2 hlo hhi
-      have hj2ne := hne j2 hlo hhi
-      rcases hpos with h | h | h | h <;> subst h <;> refine ⟨?_, ?_, ?_, ?_⟩ <;> omega
-  have h_leading_pos0 := h_ne_at a j2nat 0 _ hbnd0 (by rw [h_i2_j2_toNat]; left; rfl)
-      (fun _ _ hhi => by omega) (fun _ _ hhi => by omega)
-  have h_leading_pos1 := h_ne_at a j2nat 0 _ hbnd1 (by rw [h_i2_j2_s_toNat]; right; left; rfl)
-      (fun _ _ hhi => by omega) (fun _ _ hhi => by omega)
+      obtain ⟨hn0, hn1, hn2, hn3⟩ := h_ne_gen j2 hj2lt (hne j2 hlo hhi) posval hpos
+      rw [h_pos0_gen j2 hj2lt] at hn0
+      rw [h_pos1_gen j2 hj2lt] at hn1
+      rw [h_pos2_gen j2 hj2lt] at hn2
+      rw [h_pos3_gen j2 hj2lt] at hn3
+      simp only [hi2_toNat, hs_eq, hlen]
+      exact ⟨hn0, hn1, by omega, by omega⟩
+  have h_leading_pos0 := h_ne_at a j2nat 0 _ hbnd0 (Or.inl h_i2_j2_toNat)
+      (fun _ _ hhi => (lt_of_lt_of_eq hhi (Nat.zero_add j2nat)).trans hj2_lt)
+      (fun _ _ hhi => (lt_of_lt_of_eq hhi (Nat.zero_add j2nat)).ne)
+  have h_leading_pos1 := h_ne_at a j2nat 0 _ hbnd1 (Or.inr (Or.inl h_i2_j2_s_toNat))
+      (fun _ _ hhi => (lt_of_lt_of_eq hhi (Nat.zero_add j2nat)).trans hj2_lt)
+      (fun _ _ hhi => (lt_of_lt_of_eq hhi (Nat.zero_add j2nat)).ne)
   have h_leading_pos2 := h_ne_at a j2nat 0 _ hbnd2
-      (by rw [h_i2_len_j2_toNat]; right; right; left; rfl)
-      (fun _ _ hhi => by omega) (fun _ _ hhi => by omega)
+      (Or.inr (Or.inr (Or.inl h_i2_len_j2_toNat)))
+      (fun _ _ hhi => (lt_of_lt_of_eq hhi (Nat.zero_add j2nat)).trans hj2_lt)
+      (fun _ _ hhi => (lt_of_lt_of_eq hhi (Nat.zero_add j2nat)).ne)
   have h_leading_pos3 := h_ne_at a j2nat 0 _ hbnd3
-      (by rw [h_i2_len_j2_s_toNat]; right; right; right; rfl)
-      (fun _ _ hhi => by omega) (fun _ _ hhi => by omega)
+      (Or.inr (Or.inr (Or.inr h_i2_len_j2_s_toNat)))
+      (fun _ _ hhi => (lt_of_lt_of_eq hhi (Nat.zero_add j2nat)).trans hj2_lt)
+      (fun _ _ hhi => (lt_of_lt_of_eq hhi (Nat.zero_add j2nat)).ne)
+  have h_trail_bound : j2nat + 1 + (s.toNat - j2nat - 1) ≤ 2 ^ q :=
+    hs_eq ▸ (add_assoc j2nat 1 _).symm ▸ hs_split ▸ le_refl s.toNat
   have h_trailing_pos0 : ∀ B,
       (radix4Inner true roots s.toNat len.toNat i2.toNat
         (s.toNat - j2nat - 1) (j2nat + 1) B)[(i2 + j2u).toNat]'hbnd0 =
       B[(i2 + j2u).toNat]'hbnd0 :=
-    fun B => h_ne_at B _ _ _ hbnd0 (by rw [h_i2_j2_toNat]; left; rfl)
-      (fun _ _ hhi => by rw [← hs_eq]; omega)
-      (fun _ hlo _ => by omega)
+    fun B => h_ne_at B _ _ _ hbnd0 (Or.inl h_i2_j2_toNat)
+      (fun _ _ hhi => Nat.lt_of_lt_of_le hhi h_trail_bound)
+      (fun _ hlo _ => Nat.ne_of_gt (Nat.lt_of_succ_le hlo))
   have h_trailing_pos1 : ∀ B,
       (radix4Inner true roots s.toNat len.toNat i2.toNat
         (s.toNat - j2nat - 1) (j2nat + 1) B)[(i2 + j2u + s).toNat]'hbnd1 =
       B[(i2 + j2u + s).toNat]'hbnd1 :=
-    fun B => h_ne_at B _ _ _ hbnd1 (by rw [h_i2_j2_s_toNat]; right; left; rfl)
-      (fun _ _ hhi => by rw [← hs_eq]; omega)
-      (fun _ hlo _ => by omega)
+    fun B => h_ne_at B _ _ _ hbnd1 (Or.inr (Or.inl h_i2_j2_s_toNat))
+      (fun _ _ hhi => Nat.lt_of_lt_of_le hhi h_trail_bound)
+      (fun _ hlo _ => Nat.ne_of_gt (Nat.lt_of_succ_le hlo))
   have h_trailing_pos2 : ∀ B,
       (radix4Inner true roots s.toNat len.toNat i2.toNat
         (s.toNat - j2nat - 1) (j2nat + 1) B)[(i2 + len + j2u).toNat]'hbnd2 =
       B[(i2 + len + j2u).toNat]'hbnd2 :=
-    fun B => h_ne_at B _ _ _ hbnd2 (by rw [h_i2_len_j2_toNat]; right; right; left; rfl)
-      (fun _ _ hhi => by rw [← hs_eq]; omega)
-      (fun _ hlo _ => by omega)
+    fun B => h_ne_at B _ _ _ hbnd2 (Or.inr (Or.inr (Or.inl h_i2_len_j2_toNat)))
+      (fun _ _ hhi => Nat.lt_of_lt_of_le hhi h_trail_bound)
+      (fun _ hlo _ => Nat.ne_of_gt (Nat.lt_of_succ_le hlo))
   have h_trailing_pos3 : ∀ B,
       (radix4Inner true roots s.toNat len.toNat i2.toNat
         (s.toNat - j2nat - 1) (j2nat + 1) B)[(i2 + len + j2u + s).toNat]'hbnd3 =
       B[(i2 + len + j2u + s).toNat]'hbnd3 :=
-    fun B => h_ne_at B _ _ _ hbnd3 (by rw [h_i2_len_j2_s_toNat]; right; right; right; rfl)
-      (fun _ _ hhi => by rw [← hs_eq]; omega)
-      (fun _ hlo _ => by omega)
+    fun B => h_ne_at B _ _ _ hbnd3 (Or.inr (Or.inr (Or.inr h_i2_len_j2_s_toNat)))
+      (fun _ _ hhi => Nat.lt_of_lt_of_le hhi h_trail_bound)
+      (fun _ hlo _ => Nat.ne_of_gt (Nat.lt_of_succ_le hlo))
   -- Apply butterfly4_inverse_ZMod_combined to the leading vector.
   set A_lead := radix4Inner true roots s.toNat len.toNat i2.toNat j2nat 0 a with hA_lead_def
   have hA_lead_bnd : A_lead.all (· < mod32) := by
     rw [hA_lead_def]
     exact radix4Inner_bound true roots s.toNat len.toNat i2.toNat j2nat 0 a ha_bnd
   have hN_dvd_m : m ∣ mod64.toNat - 1 := hm_dvd
-  -- ℕ-form bounds for butterfly4_inverse_ZMod_combined
-  have hbnd0_nat : i2.toNat + j2u.toNat < m := by
-    rw [hi2_toNat, hj2u_toNat]; linarith [hbnd0, h_i2_j2_toNat.symm]
-  have hbnd1_nat : i2.toNat + j2u.toNat + s.toNat < m := by
-    rw [hi2_toNat, hj2u_toNat, hs_eq]; linarith [hbnd1, h_i2_j2_s_toNat.symm]
-  have hbnd2_nat : i2.toNat + len.toNat + j2u.toNat < m := by
-    rw [hi2_toNat, hj2u_toNat, hlen]; linarith [hbnd2, h_i2_len_j2_toNat.symm]
-  have hbnd3_nat : i2.toNat + len.toNat + j2u.toNat + s.toNat < m := by
-    rw [hi2_toNat, hj2u_toNat, hlen, hs_eq]; linarith [hbnd3, h_i2_len_j2_s_toNat.symm]
+  -- ℕ-form bounds for butterfly4_inverse_ZMod_combined (derived from h_bnd_gen_nat j2nat)
+  have hbnd0_nat : i2.toNat + j2u.toNat < m :=
+    hj2u_toNat ▸ (h_bnd_gen_nat j2nat hj2_lt).1
+  have hbnd1_nat : i2.toNat + j2u.toNat + s.toNat < m :=
+    hj2u_toNat ▸ (h_bnd_gen_nat j2nat hj2_lt).2.1
+  have hbnd2_nat : i2.toNat + len.toNat + j2u.toNat < m :=
+    hj2u_toNat ▸ (h_bnd_gen_nat j2nat hj2_lt).2.2.1
+  have hbnd3_nat : i2.toNat + len.toNat + j2u.toNat + s.toNat < m :=
+    hj2u_toNat ▸ (h_bnd_gen_nat j2nat hj2_lt).2.2.2
   have hbf := butterfly4_inverse_ZMod_combined roots A_lead hA_lead_bnd hroots hroots_bnd
     s.toNat len.toNat i2.toNat j2u.toNat hlen_butterfly hdvd hN_dvd_m hj2_lt_s
     hbnd0_nat hbnd1_nat hbnd2_nat hbnd3_nat
@@ -326,8 +557,8 @@ lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 �
     obtain ⟨K, hK⟩ := h_dvd_q2
     have hpos : (2 : ℕ) ^ (q + 2) > 0 := Nat.two_pow_pos _
     have hpos_q : (2 : ℕ) ^ q > 0 := Nat.two_pow_pos _
-    rw [hK, Nat.mul_div_cancel_left _ hpos, show (2 : ℕ) ^ (q + 2) = 4 * 2 ^ q from by ring,
-        show 4 * 2 ^ q * K = 2 ^ q * (4 * K) from by ring, Nat.mul_div_cancel_left _ hpos_q]
+    rw [hK, Nat.mul_div_cancel_left _ hpos, (by ring : (2 : ℕ) ^ (q + 2) = 4 * 2 ^ q),
+        (by ring : 4 * 2 ^ q * K = 2 ^ q * (4 * K)), Nat.mul_div_cancel_left _ hpos_q]
     ring
   -- Express the inverse twiddles τ₁, τ₂, τ₃ in terms of ω_top
   obtain ⟨h_tau1_base, h_tau2_base, h_tau3_base⟩ :=
@@ -344,19 +575,8 @@ lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 �
     rw [hlen, hj2u_toNat]; exact h_tau1_base
   -- Compute A₀ via h_inv_k and ntt_sub_input_inv_block_0
   have hb_pow' : b < 2 ^ (n - q - 2) := hb_pow
-  have h_idx_in_bnd : ∀ k, k < 4 → (4 * b + k) * 2 ^ q + j2nat < m := by
-    intro k hk
-    rw [hm_eq]
-    have hbexpand : (b + 1) * 2 ^ (q + 2) = b * 2 ^ (q + 2) + 2 ^ (q + 2) := by ring
-    have hpow_e : 2 ^ (q + 2) = 4 * 2 ^ q := by ring
-    have h_decomp : (4 * b + k) * 2 ^ q + j2nat = b * 2 ^ (q + 2) + (k * 2 ^ q + j2nat) := by
-      rw [Nat.add_mul, hpow_e]; ring
-    rw [h_decomp]
-    have hpow : k * 2 ^ q + j2nat < 2 ^ (q + 2) := by
-      rw [hpow_e]
-      have : k * 2 ^ q ≤ 3 * 2 ^ q := Nat.mul_le_mul_right _ (by omega)
-      omega
-    omega
+  have h_idx_in_bnd : ∀ k, k < 4 → (4 * b + k) * 2 ^ q + j2nat < m :=
+    fun k hk => hm_eq ▸ block_idx_lt q b k j2nat n hk hb_pow hj2_lt hq2
   -- A-values from h_inv_k
   have hA0_eq : ((A_lead[(i2 + j2u).toNat]'hbnd0).toNat : ZMod mod32.toNat) =
       ref_ntt q ωq (ntt_sub_input_inv n q (by omega) hm_eq v (4 * b + 0)) ⟨j2nat, hj2_lt⟩ := by
@@ -452,101 +672,12 @@ lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 �
     rw [show A_lead[i2.toNat + len.toNat + j2u.toNat + s.toNat]'hbnd3_nat =
           A_lead[(i2 + len + j2u + s).toNat]'hbnd3 from
           getElem_congr_idx h_add3.symm, hA3_eq, h_omega_q, ← h_sub3_fun]
-  -- Now case-split on quad
-  interval_cases quad
-  · -- quad = 0: idx-position is (i2 + j2u).toNat = b*2^(q+2) + j2nat
-    have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + j2u).toNat := by
-      rw [h_i2_j2_toNat, hr_decomp]; ring
-    have hsplit_idx :
-        (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-            0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
-        (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
-            j2u.toNat)[i2.toNat + j2u.toNat]'hbnd0_nat := by
-      have h1 :
-          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-              0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
-          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-              0 a)[(i2 + j2u).toNat]'hbnd0 :=
-        getElem_congr_idx hidx_eq
-      rw [h1, h_split, h_trailing_pos0, ← hj2u_toNat, getElem_congr_idx h_add0]
-    rw [hsplit_idx, hbf0]
-    rw [hA0_final, hA1_final, hA2_final, hA3_final]
-    rw [h_tau1, h_tau2]
-    have hr_eq : r = ⟨j2nat, pow2q_lt_q2 q j2nat hj2_lt⟩ := by
-      apply Fin.ext; simp; omega
-    rw [hr_eq, ref_ntt_radix4_q0]
-  · -- quad = 1: idx-position is (i2 + j2u + s).toNat
-    have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + j2u + s).toNat := by
-      rw [h_i2_j2_s_toNat, hr_decomp]; ring
-    have hsplit_idx :
-        (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-            0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
-        (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
-            j2u.toNat)[i2.toNat + j2u.toNat + s.toNat]'hbnd1_nat := by
-      have h1 :
-          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-              0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
-          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-              0 a)[(i2 + j2u + s).toNat]'hbnd1 :=
-        getElem_congr_idx hidx_eq
-      rw [h1, h_split, h_trailing_pos1, ← hj2u_toNat, getElem_congr_idx h_add1]
-    rw [hsplit_idx, hbf1]
-    rw [hA0_final, hA1_final, hA2_final, hA3_final]
-    rw [h_tau1, h_tau3]
-    have hr_eq : r = ⟨j2nat + 2 ^ q, pow2q_add_q_lt_q2 q j2nat hj2_lt⟩ := by
-      apply Fin.ext; simp; omega
-    rw [hr_eq, ref_ntt_radix4_q1 q ω_top _ j2nat hj2_lt]
-    ring
-  · -- quad = 2: idx-position is (i2 + len + j2u).toNat
-    have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + len + j2u).toNat := by
-      rw [h_i2_len_j2_toNat, hr_decomp]
-      have : (2 : ℕ) ^ (q + 1) = 2 * 2 ^ q := by ring
-      rw [this]; ring
-    have hsplit_idx :
-        (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-            0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
-        (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
-            j2u.toNat)[i2.toNat + len.toNat + j2u.toNat]'hbnd2_nat := by
-      have h1 :
-          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-              0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
-          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-              0 a)[(i2 + len + j2u).toNat]'hbnd2 :=
-        getElem_congr_idx hidx_eq
-      rw [h1, h_split, h_trailing_pos2, ← hj2u_toNat, getElem_congr_idx h_add2]
-    rw [hsplit_idx, hbf2]
-    rw [hA0_final, hA1_final, hA2_final, hA3_final]
-    rw [h_tau1, h_tau2]
-    have hr_eq : r = ⟨j2nat + 2 ^ (q + 1), pow2q_add_q1_lt_q2 q j2nat hj2_lt⟩ := by
-      apply Fin.ext
-      change r.val = j2nat + 2 ^ (q + 1)
-      have : (2 : ℕ) ^ (q + 1) = 2 * 2 ^ q := by ring
-      omega
-    rw [hr_eq, ref_ntt_radix4_q2]
-  · -- quad = 3: idx-position is (i2 + len + j2u + s).toNat
-    have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + len + j2u + s).toNat := by
-      rw [h_i2_len_j2_s_toNat, hr_decomp]
-      have : (2 : ℕ) ^ (q + 1) = 2 * 2 ^ q := by ring
-      rw [this]; ring
-    have hsplit_idx :
-        (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-            0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
-        (butterfly4 A_lead true roots s.toNat len.toNat i2.toNat
-            j2u.toNat)[i2.toNat + len.toNat + j2u.toNat + s.toNat]'hbnd3_nat := by
-      have h1 :
-          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-              0 a)[b * 2 ^ (q + 2) + r.val]'hidx =
-          (radix4Inner true roots s.toNat len.toNat i2.toNat s.toNat
-              0 a)[(i2 + len + j2u + s).toNat]'hbnd3 :=
-        getElem_congr_idx hidx_eq
-      rw [h1, h_split, h_trailing_pos3, ← hj2u_toNat, getElem_congr_idx h_add3]
-    rw [hsplit_idx, hbf3]
-    rw [hA0_final, hA1_final, hA2_final, hA3_final]
-    rw [h_tau1, h_tau3]
-    have hr_eq : r = ⟨j2nat + 2 ^ q + 2 ^ (q + 1), pow2q_add_q_q1_lt_q2 q j2nat hj2_lt⟩ := by
-      apply Fin.ext
-      change r.val = j2nat + 2 ^ q + 2 ^ (q + 1)
-      have h1 : (2 : ℕ) ^ (q + 1) = 2 * 2 ^ q := by ring
-      omega
-    rw [hr_eq, ref_ntt_radix4_q3 q ω_top _ j2nat hj2_lt]
-    ring
+  -- Now case-split on quad via the isolated helper (interval_cases runs in minimal context)
+  simp only [hA0_final, hA1_final, hA2_final, hA3_final] at hbf0 hbf1 hbf2 hbf3
+  exact radix4InnerInv_case_split q b r j2nat quad hp hj2_lt hquad_lt hr_decomp hidx
+    i2 j2u s len ω_top f_ntt A_lead roots a
+    hbnd0 hbnd1 hbnd2 hbnd3 hbnd0_nat hbnd1_nat hbnd2_nat hbnd3_nat
+    h_i2_j2_toNat h_i2_j2_s_toNat h_i2_len_j2_toNat h_i2_len_j2_s_toNat
+    hj2u_toNat h_add0 h_add1 h_add2 h_add3
+    h_split h_trailing_pos0 h_trailing_pos1 h_trailing_pos2 h_trailing_pos3
+    hbf0 hbf1 hbf2 hbf3 h_tau1 h_tau2 h_tau3

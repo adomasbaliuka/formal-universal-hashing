@@ -5,7 +5,9 @@ Authors: Adomas Baliuka
 -/
 import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.SolutionHelpers
+import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4InverseLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
 
 
@@ -129,7 +131,7 @@ lemma radix4Middle_getElem_at_block {N : ℕ} (inverse : Bool)
   have step1 : radix4Middle inverse roots s len nBlocks 0 a =
       radix4Middle inverse roots s len (nBlocks - b) b
         (radix4Middle inverse roots s len b 0 a) := by
-    conv_lhs => rw [show nBlocks = b + (nBlocks - b) from by omega, radix4Middle_comp]
+    conv_lhs => rw [(by omega : nBlocks = b + (nBlocks - b)), radix4Middle_comp]
     simp only [Nat.zero_add]
   -- Step 2: split (nBlocks - b) = 1 + (nBlocks - b - 1) to isolate single block b
   have step2 : radix4Middle inverse roots s len (nBlocks - b) b
@@ -137,7 +139,7 @@ lemma radix4Middle_getElem_at_block {N : ℕ} (inverse : Bool)
       radix4Middle inverse roots s len (nBlocks - b - 1) (b + 1)
         (radix4Middle inverse roots s len 1 b
           (radix4Middle inverse roots s len b 0 a)) := by
-    conv_lhs => rw [show nBlocks - b = 1 + (nBlocks - b - 1) from by omega, radix4Middle_comp]
+    conv_lhs => rw [(by omega : nBlocks - b = 1 + (nBlocks - b - 1)), radix4Middle_comp]
   -- Step 3: radix4Middle ... 1 b x = radix4Inner ... (b*2*len) s 0 x (by definition)
   have step3 : ∀ x : Vector UInt32 N,
       radix4Middle inverse roots s len 1 b x =
@@ -224,7 +226,7 @@ lemma ntt_sub_input_inv_block_0 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
       unfold ntt_sub_input_inv
       -- Apply the lemma bitRev_four_mul to rewrite the left-hand side.
       have h_bitRev : bitRev (n - q) (4 * b) = bitRev (n - q - 2) b := by
-        rcases k : n - q with ( _ | _ | k ) <;> simp_all +decide [Nat.pow_succ', Nat.mul_assoc]
+        rcases k : n - q with (_ | _ | k) <;> simp_all +decide [Nat.pow_succ', Nat.mul_assoc]
         lia
       -- Since the indices are the same, the elements at those indices are the same.
       have h_index_eq :
@@ -233,7 +235,7 @@ lemma ntt_sub_input_inv_block_0 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
         rw [h_bitRev, show n - q = n - (q + 2) + 2 by omega]
         ring_nf
         norm_num
-      grind +extAll
+      simp only [h_index_eq]
 
 lemma ntt_sub_input_inv_block_1 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     (hm_eq : m = 2 ^ n) (v : Vector UInt32 m)
@@ -247,7 +249,7 @@ lemma ntt_sub_input_inv_block_1 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
         rw [show n - q = n - (q + 2) + 2 by omega, bitRev_four_mul_add_one]
         ring
       unfold ntt_sub_input_inv
-      grind
+      simp only [h_index_lhs]
 
 lemma ntt_sub_input_inv_block_2 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     (hm_eq : m = 2 ^ n) (v : Vector UInt32 m)
@@ -270,7 +272,7 @@ lemma ntt_sub_input_inv_block_3 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
       have h_bitRev :
           bitRev (n - q) (4 * b + 3) =
           2 ^ (n - q - 1) + 2 ^ (n - q - 2) + bitRev (n - q - 2) b := by
-        rcases n' : n - q with ( _ | _ | n' ) <;> simp_all +decide [Nat.pow_succ']
+        rcases n' : n - q with (_ | _ | n') <;> simp_all +decide [Nat.pow_succ']
         · omega
         · omega
         · norm_num [Nat.add_mod, Nat.add_div, Nat.mul_mod, Nat.mul_div_assoc, Nat.mul_comm]

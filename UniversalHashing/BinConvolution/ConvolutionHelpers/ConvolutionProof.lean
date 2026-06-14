@@ -5,7 +5,10 @@ Authors: Adomas Baliuka
 -/
 import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.SolutionHelpers
+import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForward
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersPreproc
@@ -14,36 +17,6 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvPre
 import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
 
 /-! Correctness proofs for the NTT-based binary convolution pipeline. -/
-
-lemma add_len_s_ne_zero (s len : UInt64)
-    (hlen : len.toNat = 2 * s.toNat) (hlen_lt : len.toNat < 2 ^ 64) (hs_pos : 0 < s.toNat) :
-    len + s ≠ 0 := by
-  have hnat : (len + s).toNat ≠ 0 := by
-    rw [UInt64.toNat_add, hlen]
-    rcases Nat.lt_or_ge (2 * s.toNat + s.toNat) (2 ^ 64) with hlt | hge
-    · rw [Nat.mod_eq_of_lt hlt]; omega
-    · rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt (by omega)]; omega
-  exact fun h => hnat (by simp [h])
-
-lemma add_shifted_ne (s len i2 j2 : UInt64)
-    (hlen : len.toNat = 2 * s.toNat) (hlen_lt : len.toNat < 2 ^ 64)
-    (hs_pos : 0 < s.toNat) (hi2j2_lt : (i2 + j2).toNat < 2 ^ 64) :
-    i2 + len + j2 + s ≠ i2 + j2 := by
-  have hnat : (i2 + len + j2 + s).toNat ≠ (i2 + j2).toNat := by
-    have hlens_pos : (len + s).toNat ≠ 0 := by
-      rw [UInt64.toNat_add, hlen]
-      rcases Nat.lt_or_ge (2 * s.toNat + s.toNat) (2 ^ 64) with hlt | hge
-      · rw [Nat.mod_eq_of_lt hlt]; omega
-      · rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt (by omega)]; omega
-    have hls_lt : (len + s).toNat < 2 ^ 64 := (len + s).toNat_lt
-    have h1 : (i2 + len + j2 + s).toNat = ((i2 + j2).toNat + (len + s).toNat) % 2 ^ 64 := by
-      have : i2 + len + j2 + s = (i2 + j2) + (len + s) := by abel
-      rw [this]; exact UInt64.toNat_add (i2 + j2) (len + s)
-    rw [h1]
-    rcases Nat.lt_or_ge ((i2 + j2).toNat + (len + s).toNat) (2^64) with hlt | hge
-    · rw [Nat.mod_eq_of_lt hlt]; omega
-    · rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt (by omega)]; omega
-  exact fun h => hnat (congr_arg UInt64.toNat h)
 
 
 /-
@@ -169,10 +142,10 @@ lemma ntt_inplace_forward_eq_ref_ntt {m : ℕ} (n : ℕ)
   have ha3_eq : a3 =
       let a1' := bitRevLoop (m - 1) 0 (v.map toMont) 0
       if nttInplace.go 64 m 0 &&& 1 != 0 then radix2Pass (m / 2) 0 a1' else a1' := by
-    simp [ha3_def, ha2_def, ha1_def]
+    simp only [ha3_def, ha2_def, ha1_def, hk_par_def]
     split_ifs <;> rfl
   have hstart_eq : start = if nttInplace.go 64 m 0 &&& 1 != 0 then 4 else 2 := by
-    simp [hstart_def]
+    simp only [hstart_def, hk_par_def]
     split_ifs <;> rfl
   exact ntt_outerLoop_computes_ref_ntt n hm_eq h_dvd v hv_bound roots hroots hroots_bnd
     a3 ha3_eq start hstart_eq k
@@ -260,7 +233,7 @@ lemma ntt_inplace_forward_from_roots {m : ℕ}
   have h1 := ntt_computes_dft_of_montv v hm_pow2 hm_dvd hv_bound roots hroots
     hroots_bnd
   convert h1 using 1
-  rw [ to_mont_dft_factor ]
+  rw [to_mont_dft_factor]
   exact hv_bound
 
 /-
@@ -350,10 +323,7 @@ private lemma inv_n_ZMod_eq {m : ℕ} (n : ℕ) (hm_eq : m = 2 ^ n)
   have h_lt32 : (powModU64 m.toUInt64 (mod64 - 2) mod64).toNat < 2 ^ 32 := by
     rw [h_powmod, hm_toNat]; exact lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)
   rw [UInt64_toUInt32_toNat _ h_lt32, h_powmod, hm_toNat,
-      show (mod64 - 2 : UInt64).toNat = mod64.toNat - 2 from by decide]
-  -- Hoist primality facts so ZMod field instances are available for all subsequent steps
-  haveI hp : Fact (Nat.Prime mod64.toNat) := ⟨prime_3221225473⟩
-  haveI hfact : Fact (Nat.Prime mod32.toNat) := mod32_eq_mod ▸ hp
+      (by decide : (mod64 - 2 : UInt64).toNat = mod64.toNat - 2)]
   have hm_ne : (m : ZMod mod32.toNat) ≠ 0 := by
     rw [Ne, ZMod.natCast_eq_zero_iff, hm_eq]
     intro h_dvd_p
@@ -445,9 +415,9 @@ theorem ntt_inplace_inverse_correct {m : ℕ}
   have ha3_eq : a3 =
       let a1' := bitRevLoop (m - 1) 0 v 0
       if nttInplace.go 64 m 0 &&& 1 != 0 then radix2Pass (m / 2) 0 a1' else a1' := by
-    simp [ha3_def, ha2_def]; split_ifs <;> rfl
+    simp only [ha3_def, ha2_def, hk_par_def]; split_ifs <;> rfl
   have hstart_eq : start = if nttInplace.go 64 m 0 &&& 1 != 0 then 4 else 2 := by
-    simp [hstart_def]; split_ifs <;> rfl
+    simp only [hstart_def, hk_par_def]; split_ifs <;> rfl
   have h_a4 : ∀ k' : Fin m,
       ((nttInplace.outerLoop true (ensureRoots m) a3 start 64)[k'.val].toNat :
           ZMod mod32.toNat) =
@@ -468,17 +438,15 @@ theorem ntt_inplace_inverse_correct {m : ℕ}
       h a3 start 64 ha3_bound
     intro a len fuel ha
     induction fuel generalizing a len with
-    | zero => simp [nttInplace.outerLoop, ha]
+    | zero => simp only [nttInplace.outerLoop, ha]
     | succ f ih =>
       simp only [nttInplace.outerLoop]; split_ifs with hcond
       · exact ha
       · exact ih _ _ (radix4Middle_bound _ _ _ _ _ _ _ ha)
   have ha4_k_bnd :
       (nttInplace.outerLoop true (ensureRoots m) a3 start 64)[k.val].toNat <
-          mod32.toNat := by
-    have := (Vector.all_eq_true.mp ha4_bound) k.val k.isLt
-    simp only [decide_eq_true_eq] at this
-    exact UInt32.lt_iff_toNat_lt.mp this
+          mod32.toNat :=
+    vector_all_lt_getElem _ k ha4_bound
   have hinv_n_bnd : (powModU64 m.toUInt64 (mod64 - 2) mod64).toUInt32.toNat < mod32.toNat := by
     have h1 := powmod_correct m.toUInt64 (mod64 - 2) mod64 (by decide) (by decide)
     have h_lt : (powModU64 m.toUInt64 (mod64 - 2) mod64).toNat < mod64.toNat := by
@@ -594,16 +562,16 @@ theorem vec_circ_conv_zero_padded {n m : ℕ} (a b : BitVec n)
       if h : i.val < n then if b.getLsb ⟨i.val, h⟩ then 1 else 0 else 0) :
     vec_circ_conv fa fb k = int_lin_conv a b k.val := by
   unfold vec_circ_conv int_lin_conv
-  rw [ ← Finset.sum_subset
-    ( Finset.subset_univ ( Finset.filter ( fun x : Fin m => x.val < n ) Finset.univ ) ) ]
+  rw [← Finset.sum_subset
+    (Finset.subset_univ (Finset.filter (fun x : Fin m => x.val < n) Finset.univ))]
   · refine Finset.sum_bij
-      ( fun x hx => ⟨ x, by linarith [ Fin.is_lt x, Finset.mem_filter.mp hx ] ⟩ )
+      (fun x hx => ⟨x, by linarith [Fin.is_lt x, Finset.mem_filter.mp hx]⟩)
       ?_ ?_ ?_ ?_
     · simp only [Finset.mem_filter, Finset.mem_univ, true_and, implies_true]
     · simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.mk.injEq]
       exact fun i hi j hj hij => Fin.ext hij
     · simp only [Finset.mem_univ, Finset.mem_filter, true_and, forall_const]
-      exact fun i => ⟨ ⟨ i, by linarith [ Fin.is_lt i ] ⟩, by simp ⟩
+      exact fun i => ⟨⟨i, by linarith [Fin.is_lt i]⟩, by simp⟩
     · simp only [Finset.mem_filter, Finset.mem_univ, true_and, hfa, BitVec.getLsb_eq_getElem,
       Fin.getElem_fin, hfb, mul_dite, mul_ite, mul_one, mul_zero, Fin.val_fin_le]
       intro i hi
@@ -611,30 +579,30 @@ theorem vec_circ_conv_zero_padded {n m : ℕ} (a b : BitVec n)
       · rename_i h₁ h₂ h₃ h₄ h₅
         contrapose! h₅
         convert h₂ using 2
-        rw [ Nat.mod_eq_sub_mod ]
-        · rw [ Nat.mod_eq_of_lt ] <;> omega
+        rw [Nat.mod_eq_sub_mod]
+        · rw [Nat.mod_eq_of_lt] <;> omega
         · omega
       · rename_i h₁ h₂ h₃ h₄
         contrapose! h₄
         constructor
         · exact Nat.le_of_not_lt fun h => by
-            have := Nat.mod_eq_of_lt (show (k : ℕ) + m - i < m from by omega)
+            have := Nat.mod_eq_of_lt (by omega : (k : ℕ) + m - i < m)
             omega
         · by_cases h₅ : (k : ℕ) < i
           · omega
-          · rw [ Nat.mod_eq_sub_mod ] at h₁
-            · rw [ Nat.mod_eq_of_lt ] at h₁ <;> omega
+          · rw [Nat.mod_eq_sub_mod] at h₁
+            · rw [Nat.mod_eq_of_lt] at h₁ <;> omega
             · omega
       · rename_i h₁ h₂ h₃ h₄ h₅
         convert h₂ _
         convert h₄ using 2
-        rw [ Nat.mod_eq_sub_mod ]
-        · rw [ Nat.mod_eq_of_lt ]
+        rw [Nat.mod_eq_sub_mod]
+        · rw [Nat.mod_eq_of_lt]
           · omega
           · omega
         · omega
-      · rw [ Nat.mod_eq_sub_mod ] at *
-        · rw [ Nat.mod_eq_of_lt ] at * <;> omega
+      · rw [Nat.mod_eq_sub_mod] at *
+        · rw [Nat.mod_eq_of_lt] at * <;> omega
         · omega
   · aesop
 
@@ -645,15 +613,15 @@ theorem omega_is_prim_root {m : ℕ}
     (hm_pow2 : Nat.isPowerOfTwo m)
     (hm_dvd : m ∣ mod64.toNat - 1) :
     IsPrimitiveRoot ((primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / m)) m := by
-  obtain ⟨ k, hk ⟩ := hm_dvd;
-  convert IsPrimitiveRoot.pow_of_dvd ( prim_root_PRIM_ROOT ) _ _ using 1;
-  · rw [ Nat.div_div_self ] <;> norm_num [ hk ];
+  obtain ⟨k, hk⟩ := hm_dvd
+  convert IsPrimitiveRoot.pow_of_dvd (prim_root_PRIM_ROOT) _ _ using 1
+  · rw [Nat.div_div_self] <;> norm_num [hk]
     exact ⟨by rintro rfl; simp only [Nat.zero_mul] at hk; exact absurd hk (by decide),
            by rintro rfl; simp only [mul_zero] at hk; exact absurd hk (by decide)⟩
-  · rw [ hk, Nat.mul_div_cancel_left ] <;> norm_num;
+  · rw [hk, Nat.mul_div_cancel_left] <;> norm_num
     · rintro rfl; simp only [Nat.mul_zero] at hk; exact absurd hk (by decide)
-    · cases hm_pow2 ; aesop;
-  · exact Nat.div_dvd_of_dvd ( hk.symm ▸ dvd_mul_right _ _ )
+    · cases hm_pow2 ; aesop
+  · exact Nat.div_dvd_of_dvd (hk.symm ▸ dvd_mul_right _ _)
 
 /-
 m > 1 when it's a power of 2 dividing p-1 and the NTT has a meaningful size.
@@ -678,15 +646,14 @@ theorem ntt_orthogonality (m : ℕ)
     ∑ j : Fin m, ω ^ (j.val * c) =
       if c % m = 0 then (m : ZMod mod32.toNat) else 0 := by
   split_ifs <;> simp_all only [pow_mul']
-  · rw [ ← Nat.mod_add_div c m, ‹c % m = 0› ] ; simp [ pow_mul, hω.pow_eq_one ] ;
+  · rw [← Nat.mod_add_div c m, ‹c % m = 0›] ; simp [pow_mul, hω.pow_eq_one] 
   · have h_geom_sum : ∑ x ∈ Finset.range m, (ω ^ c) ^ x = 0 := by
       have h_geom_sum : (ω ^ c) ^ m = 1 := by
-        rw [ ← pow_mul, mul_comm, pow_mul, hω.pow_eq_one, one_pow ];
+        rw [← pow_mul, mul_comm, pow_mul, hω.pow_eq_one, one_pow]
       have h_geom_sum : (ω ^ c) ≠ 1 := by
-        exact fun h => ‹¬c % m = 0› ( Nat.mod_eq_zero_of_dvd <| hω.2 c h );
-      haveI := Fact.mk (show Nat.Prime mod32.toNat from prime_3221225473)
+        exact fun h => ‹¬c % m = 0› (Nat.mod_eq_zero_of_dvd <| hω.2 c h)
       exact (by rw [geom_sum_eq] <;> aesop)
-    rwa [ Finset.sum_range ] at h_geom_sum
+    rwa [Finset.sum_range] at h_geom_sum
 
 /-
 The montMul operation in ZMod: (montMul a b : ZMod p) = a * b * R⁻¹.
@@ -698,13 +665,13 @@ theorem mont_mul_zmod (a b : UInt32)
     (montMul a b).toNat = ((a.toNat : ZMod mod32.toNat) * b.toNat *
       (montR1.toNat : ZMod mod32.toNat)⁻¹).val := by
   have h_mod : (montMul a b).toNat * 2 ^ 32 ≡ a.toNat * b.toNat [MOD mod32.toNat] := by
-    exact mont_mul_correct a b ha hb |>.2;
+    exact mont_mul_correct a b ha hb |>.2
   have h_mod : (montMul a b).toNat * (montR1.toNat : ZMod mod32.toNat) = a.toNat * b.toNat := by
-    simpa [ ← ZMod.natCast_eq_natCast_iff ] using h_mod;
-  haveI := Fact.mk ( show Nat.Prime mod32.toNat from prime_3221225473 ) ; simp only [ ← h_mod ]
-  rw [ mul_assoc, mul_inv_cancel₀, mul_one ];
-  · exact Eq.symm ( ZMod.val_cast_of_lt ( mont_mul_correct a b ha hb |>.1 ) );
-  · rw [ Ne.eq_def, ZMod.natCast_eq_zero_iff ] ; decide
+    simpa [← ZMod.natCast_eq_natCast_iff] using h_mod
+  simp only [← h_mod]
+  rw [mul_assoc, mul_inv_cancel₀, mul_one]
+  · exact Eq.symm (ZMod.val_cast_of_lt (mont_mul_correct a b ha hb |>.1))
+  · rw [Ne.eq_def, ZMod.natCast_eq_zero_iff] ; decide
 
 /-
 The prod vector has all elements < mod32.
@@ -713,12 +680,13 @@ theorem prod_bound {m : ℕ}
     (FA FB : Vector UInt32 m)
     (hFA : FA.all (· < mod32)) (hFB : FB.all (· < mod32)) :
     ((FA.zip FB).map (fun xy => montMul xy.1 xy.2)).all (· < mod32) := by
-  rw [ Vector.all_eq_true ] at *;
+  rw [Vector.all_eq_true] at *
   intro i hi
   specialize hFA i hi
   specialize hFB i hi
-  simp_all [ Vector.getElem_map, Vector.getElem_zip ]
-  have := mont_mul_correct FA[i] FB[i] hFA hFB; aesop;
+  simp_all only [Vector.getElem_map, Vector.getElem_zip,
+      decide_eq_true_eq, UInt32.lt_iff_toNat_lt]
+  have := mont_mul_correct FA[i] FB[i] hFA hFB; aesop
 
 /-
 In a field, if ω^m = 1 and m > 0, then ω⁻¹ = ω^(m-1).
@@ -726,19 +694,18 @@ In a field, if ω^m = 1 and m > 0, then ω⁻¹ = ω^(m-1).
 theorem inv_eq_pow_pred (m : ℕ) (hm : 0 < m)
     (ω : ZMod mod32.toNat) (hω : IsPrimitiveRoot ω m) :
     ω⁻¹ = ω ^ (m - 1) := by
-  haveI : Fact ( Nat.Prime mod32.toNat ) := ⟨ by exact prime_3221225473 ⟩;
-  exact inv_eq_of_mul_eq_one_right ( by rw [ ← pow_succ', Nat.sub_add_cancel hm, hω.pow_eq_one ] )
+  exact inv_eq_of_mul_eq_one_right (by rw [← pow_succ', Nat.sub_add_cancel hm, hω.pow_eq_one])
 
 /-
 The mod-m reduction for orthogonality: (i + l + k*(m-1)) % m = (i + l + m - k) % m.
 -/
 theorem ortho_mod_eq (m i l k : ℕ) (hm : 0 < m) (hk : k < m) :
     (i + l + k * (m - 1)) % m = (i + l + m - k) % m := by
-  zify [ hm ];
-  rw [ Nat.cast_sub (by linarith) ]
+  zify [hm]
+  rw [Nat.cast_sub (by linarith)]
   push_cast
   ring_nf
-  norm_num [ Int.add_emod, Int.sub_emod, Int.mul_emod ]
+  norm_num [Int.add_emod, Int.sub_emod, Int.mul_emod]
 
 /-
 For i, k in Fin m, (i + (k+m-i)%m) % m = k.
@@ -746,15 +713,15 @@ For i, k in Fin m, (i + (k+m-i)%m) % m = k.
 theorem circ_index_mod (m : ℕ) (i k : Fin m) :
     (i.val + (k.val + m - i.val) % m) % m = k.val := by
   rw [Nat.add_mod, Nat.mod_mod, ← Nat.add_mod]
-  rw [ add_tsub_cancel_of_le ( by linarith [ Fin.is_lt i, Fin.is_lt k ] ) ]
-  norm_num [ Nat.mod_eq_of_lt ]
+  rw [add_tsub_cancel_of_le (by linarith [Fin.is_lt i, Fin.is_lt k])]
+  norm_num [Nat.mod_eq_of_lt]
 
 /-
 m cast to ZMod mod32.toNat is nonzero when m divides p-1 (and 1 < m).
 -/
 theorem m_ne_zero_zmod (m : ℕ) (hm : 1 < m) (hm_dvd : m ∣ mod32.toNat - 1) :
     (m : ZMod mod32.toNat) ≠ 0 := by
-  rw [ Ne.eq_def, ZMod.natCast_eq_zero_iff ];
+  rw [Ne.eq_def, ZMod.natCast_eq_zero_iff]
   exact Nat.not_dvd_of_pos_of_lt hm.le
     (Nat.lt_of_le_of_lt (Nat.le_of_dvd (Nat.sub_pos_of_lt (by decide)) hm_dvd)
       (Nat.sub_lt (by decide) (by decide)))
@@ -772,15 +739,15 @@ theorem dft_convolution_theorem (m : ℕ) (hm : 1 < m)
       (∑ l : Fin m, g l * ω ^ (l.val * j.val)) *
       (ω⁻¹) ^ (j.val * k.val) =
     ∑ i : Fin m, f i * g ⟨(k.val + m - i.val) % m, Nat.mod_lt _ (by omega)⟩ := by
-  haveI : Fact ( Nat.Prime mod32.toNat ) := ⟨ prime_3221225473 ⟩
   generalize_proofs at *; (
   -- Step 1: Replace (ω⁻¹)^(j*k) with ω^((m-1)*j*k) using inv_eq_pow_pred.
   have h1 : ∀ j : Fin m, ω⁻¹ ^ (j.val * k.val) = ω ^ ((m - 1) * j.val * k.val) := by
     intro j
     have h_inv_pow : ω⁻¹ = ω ^ (m - 1) := by
-      rw [ inv_eq_of_mul_eq_one_right ]
+      rw [inv_eq_of_mul_eq_one_right]
       have := hω.pow_eq_one
-      rcases m with ( _ | _ | m ) <;> simp_all [ pow_succ' ]
+      rcases m with (_ | _ | m) <;>
+        first | omega | simp_all only [pow_succ', Nat.add_sub_cancel]
     rw [h_inv_pow]
     ring
   -- Step 2: Distribute the product of sums using Finset.mul_sum and Finset.sum_mul.
@@ -818,30 +785,30 @@ theorem dft_convolution_theorem (m : ℕ) (hm : 1 < m)
           generalize_proofs at *
           simp_all only [inv_pow, mul_ite, mul_zero, ← ZMod.natCast_eq_natCast_iff,
             Nat.cast_add, Nat.cast_mul, Nat.cast_zero,
-            Nat.cast_sub (show (i : ℕ) ≤ k + m from by linarith [Fin.is_lt i, Fin.is_lt k]),
+            Nat.cast_sub (by linarith [Fin.is_lt i, Fin.is_lt k] : (i : ℕ) ≤ k + m),
             CharP.cast_eq_zero, add_zero]
-          simp_all only [Nat.cast_sub (show 1 ≤ m from by linarith),
+          simp_all only [Nat.cast_sub (by linarith : 1 ≤ m),
             CharP.cast_eq_zero, Nat.cast_one, zero_sub, mul_neg, mul_one]
           linear_combination' h_eq
-        exact (by rw [ ← h_eq, Nat.mod_eq_of_lt (Fin.is_lt l) ])
+        exact (by rw [← h_eq, Nat.mod_eq_of_lt (Fin.is_lt l)])
       · intro h
         have h_mod : (i.val + l.val + k.val * (m - 1)) % m = 0 := by
-          simp [ ← ZMod.val_natCast, h ]
-          simp [ Nat.cast_sub (show 1 ≤ m from hm.le),
-            Nat.cast_sub (show (i : ℕ) ≤ k + m from by linarith [Fin.is_lt i, Fin.is_lt k]) ]
+          simp [← ZMod.val_natCast, h]
+          simp [Nat.cast_sub (hm.le : 1 ≤ m),
+            Nat.cast_sub (by linarith [Fin.is_lt i, Fin.is_lt k] : (i : ℕ) ≤ k + m)]
           ring_nf
           cases m <;> aesop
         exact h_mod
     generalize_proofs at *
-    rw [ Finset.sum_eq_single ⟨ ( k + m - i ) % m, by assumption ⟩ ] <;>
-      simp +contextual only [ h_unique_l, Finset.mem_univ, ne_eq, mul_ite, mul_zero,
+    rw [Finset.sum_eq_single ⟨(k + m - i) % m, by assumption⟩] <;>
+      simp +contextual only [h_unique_l, Finset.mem_univ, ne_eq, mul_ite, mul_zero,
         ite_eq_left_iff, ite_eq_right_iff, zero_eq_mul, mul_eq_zero, forall_const,
-        not_true_eq_false, IsEmpty.forall_iff ]
-    · exact fun h => False.elim <| h <| h_unique_l ⟨ _, by assumption ⟩ |>.2 rfl
+        not_true_eq_false, IsEmpty.forall_iff]
+    · exact fun h => False.elim <| h <| h_unique_l ⟨_, by assumption⟩ |>.2 rfl
     · exact fun l hl hl' => False.elim <| hl <| Fin.ext hl'
   simp_all only []
-  rw [ ← Finset.sum_mul _ _ _, inv_mul_eq_div,
-    mul_div_cancel_right₀ _ (by exact m_ne_zero_zmod m hm hm_dvd) ])
+  rw [← Finset.sum_mul _ _ _, inv_mul_eq_div,
+    mul_div_cancel_right₀ _ (by exact m_ne_zero_zmod m hm hm_dvd)])
 
 /-
 The NTT pipeline (2 forward NTTs, pointwise montMul, 1 inverse NTT) computes the
@@ -870,20 +837,14 @@ theorem ntt_pipeline_computes_circ_conv {m : ℕ}
   have hprod_bound : prod.all (· < mod32) := prod_bound FA FB hFA_bound hFB_bound
   have hresult_bound : result.all (· < mod32) := ntt_inplace_output_bound prod true _ hprod_bound
   -- result[k] < mod32
-  have hresult_lt : result[k].toNat < mod32.toNat := by
-    have := (Vector.all_eq_true.mp hresult_bound) k.val k.isLt
-    simp only [decide_eq_true_eq] at this
-    exact UInt32.lt_iff_toNat_lt.mp this
-  haveI hp : Fact (Nat.Prime mod32.toNat) := ⟨prime_3221225473⟩
+  have hresult_lt : result[k].toNat < mod32.toNat := vector_all_lt_getElem _ k hresult_bound
   set ω : ZMod mod32.toNat := (primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / m)
   set R : ZMod mod32.toNat := (montR1.toNat : ZMod mod32.toNat)
   -- Helper: get pointwise bounds from Vector.all bounds
-  have hFA_pw : ∀ j : Fin m, FA[j].toNat < mod32.toNat := by
-    intro j; have := (Vector.all_eq_true.mp hFA_bound) j.val j.isLt
-    simp only [decide_eq_true_eq] at this; exact UInt32.lt_iff_toNat_lt.mp this
-  have hFB_pw : ∀ j : Fin m, FB[j].toNat < mod32.toNat := by
-    intro j; have := (Vector.all_eq_true.mp hFB_bound) j.val j.isLt
-    simp only [decide_eq_true_eq] at this; exact UInt32.lt_iff_toNat_lt.mp this
+  have hFA_pw : ∀ j : Fin m, FA[j].toNat < mod32.toNat :=
+    fun j => vector_all_lt_getElem _ j hFA_bound
+  have hFB_pw : ∀ j : Fin m, FB[j].toNat < mod32.toNat :=
+    fun j => vector_all_lt_getElem _ j hFB_bound
   -- Step 1: Forward NTT specs
   have hFA_spec : ∀ j : Fin m, (FA[j].toNat : ZMod mod32.toNat) =
       R * ∑ i : Fin m, (fa[i].toNat : ZMod mod32.toNat) * ω ^ (i.val * j.val) :=
@@ -924,9 +885,9 @@ theorem ntt_pipeline_computes_circ_conv {m : ℕ}
         (∑ i : Fin m, (fa[i].toNat : ZMod mod32.toNat) * ω ^ (i.val * j.val)) *
         (∑ i : Fin m, (fb[i].toNat : ZMod mod32.toNat) * ω ^ (i.val * j.val)) *
         (ω⁻¹) ^ (j.val * k.val) := by
-    rw [ hresult_spec, mul_assoc, mul_left_comm ]
-    rw [ Finset.mul_sum _ _ _ ]
-    rw [ Finset.sum_congr rfl ]
+    rw [hresult_spec, mul_assoc, mul_left_comm]
+    rw [Finset.mul_sum _ _ _]
+    rw [Finset.sum_congr rfl]
     intros
     rw [hprod_zmod]
     simp only [← mul_assoc, inv_mul_cancel₀ hR_ne, one_mul]
@@ -934,22 +895,22 @@ theorem ntt_pipeline_computes_circ_conv {m : ℕ}
   have hω : IsPrimitiveRoot ω m := omega_is_prim_root hm_pow2 hm_dvd
   have hzmod : (result[k].toNat : ZMod mod32.toNat) =
       (vec_circ_conv fa fb k : ZMod mod32.toNat) := by
-    by_cases hm : m = 1;
+    by_cases hm : m = 1
     · unfold vec_circ_conv
-      simp only [ Fin.getElem_fin, hm, Nat.cast_sum, Nat.cast_mul ]
-      rw [ Finset.sum_eq_single ⟨ 0, by linarith ⟩ ] <;>
-        simp only [ tsub_zero, Nat.add_mod_right, Finset.mem_univ, ne_eq,
-          mul_eq_zero, forall_const, not_true_eq_false, IsEmpty.forall_iff ]
-      · convert hresult_conv using 1;
-        rw [ Finset.sum_eq_single ⟨ 0, by linarith ⟩ ] <;>
-          simp only [ hm, Nat.cast_one, inv_one, Fin.getElem_fin, mul_zero, pow_zero,
+      simp only [Fin.getElem_fin, hm, Nat.cast_sum, Nat.cast_mul]
+      rw [Finset.sum_eq_single ⟨0, by linarith⟩] <;>
+        simp only [tsub_zero, Nat.add_mod_right, Finset.mem_univ, ne_eq,
+          mul_eq_zero, forall_const, not_true_eq_false, IsEmpty.forall_iff]
+      · convert hresult_conv using 1
+        rw [Finset.sum_eq_single ⟨0, by linarith⟩] <;>
+          simp only [hm, Nat.cast_one, inv_one, Fin.getElem_fin, mul_zero, pow_zero,
             mul_one, zero_mul, one_mul, Finset.mem_univ, ne_eq, inv_pow, mul_eq_zero,
             inv_eq_zero, pow_eq_zero_iff', not_or, forall_const, not_true_eq_false,
-            IsEmpty.forall_iff ]
-        · rw [ Finset.sum_eq_single ⟨ 0, by linarith ⟩,
-            Finset.sum_eq_single ⟨ 0, by linarith ⟩ ] <;>
-          simp only [ Finset.mem_univ, ne_eq, forall_const, not_true_eq_false,
-            IsEmpty.forall_iff ]
+            IsEmpty.forall_iff]
+        · rw [Finset.sum_eq_single ⟨0, by linarith⟩,
+            Finset.sum_eq_single ⟨0, by linarith⟩] <;>
+          simp only [Finset.mem_univ, ne_eq, forall_const, not_true_eq_false,
+            IsEmpty.forall_iff]
           · norm_num [Nat.mod_one]
             rfl
           · exact fun b h => absurd (Fin.ext (by have := b.isLt; omega)) h
@@ -960,7 +921,7 @@ theorem ntt_pipeline_computes_circ_conv {m : ℕ}
         (m_gt_one_of_pow2_dvd (mod32_eq_mod ▸ hm_dvd) hm) ω hω
         (mod32_eq_mod ▸ hm_dvd) (fun i => (fa[i].toNat : ZMod mod32.toNat))
         (fun i => (fb[i].toNat : ZMod mod32.toNat)) k using 1
-      unfold vec_circ_conv; push_cast; rfl;
+      unfold vec_circ_conv; push_cast; rfl
   -- Lift from ZMod to Nat
   have hmod_eq := (ZMod.natCast_eq_natCast_iff _ _ _).mp hzmod
   rw [Nat.ModEq] at hmod_eq
@@ -981,7 +942,7 @@ theorem vec_circ_conv_lt_mod {n m : ℕ}
     (hfb : ∀ i : Fin m, (fb.get i).toNat ≤ 1) :
     vec_circ_conv fa fb k < mod32.toNat := by
   refine lt_of_le_of_lt
-    ( Finset.sum_le_sum (g := fun i => if i.val < n then 1 else 0) fun i _ => ?_ ) ?_
+    (Finset.sum_le_sum (g := fun i => if i.val < n then 1 else 0) fun i _ => ?_) ?_
   · dsimp only []
     split_ifs with hi
     · exact Nat.mul_le_mul (hfa i |>.1) (hfb _)
@@ -1073,16 +1034,16 @@ theorem bool_sum_eq_int_parity {n : ℕ} (a b : BitVec n) (i : Fin n) :
   unfold int_circ_conv
   simp only [Fin.getElem_fin, BitVec.getLsb_eq_getElem, mul_ite, mul_one, mul_zero,
     Finset.sum_ite, Bool.not_eq_true, Finset.sum_const_zero, add_zero]
-  rw [ Finset.sum_filter ]
-  rw [ Finset.sum_filter, Finset.sum_nat_mod ]
-  induction ( Finset.univ : Finset ( Fin n ) ) using Finset.induction with
+  rw [Finset.sum_filter]
+  rw [Finset.sum_filter, Finset.sum_nat_mod]
+  induction (Finset.univ : Finset (Fin n)) using Finset.induction with
   | empty => simp_all +decide
   | insert j fs _ ih =>
-    simp_all +decide [ Finset.sum_insert ]
-    cases a[↑j] <;> cases b[↑(i - j)] <;> simp +decide [ * ]
+    simp_all +decide [Finset.sum_insert]
+    cases a[↑j] <;> cases b[↑(i - j)] <;> simp +decide [*]
     cases Nat.mod_two_eq_zero_or_one
-        ( ∑ x ∈ fs, ( if b[↑(i - x)] = true then if a[↑x] = true then 1 else 0 else 0 ) % 2 ) <;>
-      simp +decide [ *, Nat.add_mod ]
+        (∑ x ∈ fs, (if b[↑(i - x)] = true then if a[↑x] = true then 1 else 0 else 0) % 2) <;>
+      simp +decide [*, Nat.add_mod]
     · aesop
     · simp_all +decide only [Fin.getElem_fin, BEq.rfl, Nat.mod_succ, Nat.reduceAdd, Nat.mod_self,
         Nat.reduceBEq]
@@ -1093,14 +1054,14 @@ Bit 0 of a UInt32 sum equals parity of the Nat sum.
 -/
 theorem uint32_sum_bit0 (u v : UInt32) :
     ((u + v) &&& 1 == 1) = ((u.toNat + v.toNat) % 2 == 1) := by
-  cases Nat.mod_two_eq_zero_or_one ( u.toNat + v.toNat ) <;>
-    simp only [ Nat.add_mod, dvd_refl, Nat.mod_mod_of_dvd, Nat.reduceBEq,
-      beq_eq_false_iff_ne, ne_eq, BEq.rfl, beq_iff_eq, * ] at *
-  · exact ne_of_apply_ne ( fun x => x.toNat ) ( by simp [ *, Nat.add_mod ] ; omega )
+  cases Nat.mod_two_eq_zero_or_one (u.toNat + v.toNat) <;>
+    simp only [Nat.add_mod, dvd_refl, Nat.mod_mod_of_dvd, Nat.reduceBEq,
+      beq_eq_false_iff_ne, ne_eq, BEq.rfl, beq_iff_eq, *] at *
+  · exact ne_of_apply_ne (fun x => x.toNat) (by simp [*, Nat.add_mod] ; omega)
   · cases Nat.mod_two_eq_zero_or_one u.toNat <;>
       cases Nat.mod_two_eq_zero_or_one v.toNat <;> simp_all +decide only []
-    · rw [ ← UInt32.toNat_inj ] ; simp [ *, Nat.add_mod ]
-    · simp_all [ ← UInt32.toNat_inj, Nat.add_mod ]
+    · rw [← UInt32.toNat_inj] ; simp [*, Nat.add_mod]
+    · simp_all [← UInt32.toNat_inj, Nat.add_mod]
 
 /-- Correctness theorem for NTT-based implementation. -/
 theorem circular_convolution_gf2_correct' {n : ℕ} (a b : BitVec n)

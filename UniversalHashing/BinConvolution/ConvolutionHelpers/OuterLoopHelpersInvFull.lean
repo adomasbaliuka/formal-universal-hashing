@@ -5,7 +5,10 @@ Authors: Adomas Baliuka
 -/
 import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.SolutionHelpers
+import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInv
@@ -63,11 +66,12 @@ lemma radix4Middle_advances_inv_inverse {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n
     intro b r hb idx hidx
     have hn64 : n < 64 := n_lt_64_of_pow2_nat m n hm_eq (hm_eq.symm ▸ h_dvd)
     have hs_eq : (len >>> 1).toNat = 2 ^ q := by
-      simp [UInt64.toNat_shiftRight, hlen, Nat.shiftRight_eq_div_pow, Nat.pow_succ']
+      simp only [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow, hlen, Nat.pow_succ',
+                 (by decide : (1 : UInt64).toNat % 64 = 1), pow_one]; omega
     set s : UInt64 := len >>> 1 with hs_def
     have hlen_butterfly : len.toNat = 2 * s.toNat := by rw [hs_eq, hlen]; ring
     have hnBlocks_eq : m / (2 * len.toNat) = 2 ^ (n - q - 2) := by
-      rw [hm_eq, hlen, show (2 : ℕ) * 2 ^ (q + 1) = 2 ^ (q + 2) from by ring]
+      rw [hm_eq, hlen, (by ring : (2 : ℕ) * 2 ^ (q + 1) = 2 ^ (q + 2))]
       have h2 : (2 : ℕ) ^ n = 2 ^ (n - q - 2) * 2 ^ (q + 2) := by
         rw [← pow_add]; congr 1; omega
       rw [h2, Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
@@ -76,7 +80,7 @@ lemma radix4Middle_advances_inv_inverse {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n
     have hj2_lt : j2nat < 2 ^ q := Nat.mod_lt _ (Nat.two_pow_pos q)
     have hquad_lt : quad < 4 := by
       have hrlt : r.val < 4 * 2 ^ q := by
-        have := r.isLt; linarith [show (2:ℕ)^(q+2) = 4 * 2^q from by ring]
+        have := r.isLt; linarith [(by ring : (2:ℕ)^(q+2) = 4 * 2^q)]
       exact Nat.div_lt_iff_lt_mul (Nat.two_pow_pos q) |>.mpr (by linarith)
     have hb_pow : b < 2 ^ (n - q - 2) := (show n - (q + 2) = n - q - 2 by omega) ▸ hb
     have h_i2nat : ((b * 2 * len.toNat).toUInt64).toNat = b * 2 * len.toNat :=
@@ -88,7 +92,7 @@ lemma radix4Middle_advances_inv_inverse {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n
     have hb4_lt : ∀ k < 4, 4 * b + k < 2 ^ (n - q) := by
       intro k hk
       have h4 : 4 * 2 ^ (n - q - 2) = 2 ^ (n - q) := by
-        rw [show (4:ℕ) = 2^2 from by norm_num, ← pow_add]; congr 1; omega
+        rw [(by norm_num : (4:ℕ) = 2^2), ← pow_add]; congr 1; omega
       nlinarith [Nat.mul_lt_mul_of_pos_left hb_pow (show 0 < 4 by decide)]
     set ωq_inv : ZMod mod32.toNat :=
       (((primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / 2 ^ q))⁻¹)
