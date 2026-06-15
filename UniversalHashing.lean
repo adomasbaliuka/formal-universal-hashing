@@ -5,3 +5,8 @@ import UniversalHashing.LinearModp
 import UniversalHashing.AllFunctions
 import UniversalHashing.AlmostUniversal
 import UniversalHashing.AlmostUniversalBounds
+import UniversalHashing.DeltaUniversal
+import UniversalHashing.Poly1305.Poly1305
+import UniversalHashing.Poly1305.Poly1305Prime
+import UniversalHashing.ToeplitzGeneral
+import UniversalHashing.Util
