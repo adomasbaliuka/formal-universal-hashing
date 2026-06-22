@@ -3,7 +3,6 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
@@ -13,9 +12,6 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
 /-!
 # Helper lemmas for `ntt_outerLoop_computes_ref_ntt`
 -/
-
-lemma n_lt_64_of_pow2_UInt64 (m : UInt64) (n : ℕ) (hm : m.toNat = 2 ^ n) : n < 64 :=
-  (Nat.pow_lt_pow_iff_right (by norm_num : 1 < 2)).mp (hm ▸ m.toNat_lt)
 
 /-- ℕ-variant: if `m = 2^n` and `m ∣ mod64.toNat - 1`, then `n < 64`. -/
 lemma n_lt_64_of_pow2_nat (m n : ℕ) (hm : m = 2 ^ n) (hm_dvd : m ∣ mod64.toNat - 1) :
@@ -107,22 +103,6 @@ lemma go_computes_log2 (m : UInt64) (n : ℕ) (hm : m.toNat = 2 ^ n) (hn : n < 6
     decide
   rw [hm]
   exact h_ind n hn
-
-lemma go_parity_even (m : UInt64) (n : ℕ) (hm : m.toNat = 2 ^ n) (hn : n < 64) (hne : Even n) :
-    nttInplace.go 64 m.toNat 0 &&& 1 = 0 := by
-  have h_go_eq_n : (nttInplace.go 64 m.toNat 0).toNat = n := by
-    apply go_computes_log2 m n hm hn
-  have h_go_even : (nttInplace.go 64 m.toNat 0).toNat % 2 = 0 := by
-    exact h_go_eq_n.symm ▸ Nat.even_iff.mp hne
-  apply UInt64.ext
-  simp only [UInt64.toNat_and, UInt64.toNat_one, UInt64.toNat_zero]
-  rw [(by norm_num : (1 : ℕ) = 2 ^ 1 - 1), Nat.and_two_pow_sub_one_eq_mod]; exact h_go_even
-
-lemma go_parity_odd (m : UInt64) (n : ℕ) (hm : m.toNat = 2 ^ n) (hn : n < 64) (hno : Odd n) :
-    nttInplace.go 64 m.toNat 0 &&& 1 ≠ 0 := by
-  have h_bit : (nttInplace.go 64 m.toNat 0).toNat % 2 = 1 := by
-    rw [go_computes_log2 m n hm hn]; exact Nat.odd_iff.mp hno
-  intro h; simp_all +decide [UInt64.ext_iff]
 
 /-- ℕ-variant: if `m = 2^n` and `n` is even, then `nttInplace.go 64 m 0 &&& 1 = 0`. -/
 lemma go_parity_even_nat (m n : ℕ) (hm : m = 2 ^ n) (hn : n < 64) (hne : Even n) :
@@ -217,16 +197,6 @@ or when `len = 0`), `radix4Middle` does nothing. -/
     radix4Middle inverse roots s len 0 b a = a := by
   simp only [radix4Middle]
 
-/-
-When `q + 2 ≤ n` and `len.toNat = 2^(q+1)`, `len.toNat * 2` does not exceed `m.toNat`.
--/
-lemma outerLoop_len_not_gt {m : UInt64} (n q : ℕ)
-    (hm_eq : m.toNat = 2 ^ n) (hq2 : q + 2 ≤ n)
-    (len : UInt64) (hlen : len.toNat = 2 ^ (q + 1)) :
-    ¬(len.toNat * 2 > m.toNat) := by
-  rw [hm_eq, hlen, (by ring : 2 ^ (q + 1) * 2 = 2 ^ (q + 2))]
-  exact Nat.not_lt.mpr (Nat.pow_le_pow_right (by norm_num) hq2)
-
 /-- Nat version of outerLoop_len_not_gt. -/
 lemma outerLoop_len_not_gt_nat {m : ℕ} (n q : ℕ)
     (hm_eq : m = 2 ^ n) (hq2 : q + 2 ≤ n)
@@ -286,28 +256,11 @@ lemma outerLoop_noop_pow2 {m : ℕ} (inverse : Bool) (roots a : Vector UInt32 m)
 
 /-! ### bitRev radix-4 decomposition -/
 
-lemma bitRev_four_mul (w b : ℕ) :
-    bitRev (w + 2) (4 * b) = bitRev w b := by
-      induction w generalizing b with
-      | zero => simp_all +decide [Nat.mul_mod]; omega
-      | succ w ih => simp_all +decide [Nat.mul_mod]; grind
-
 lemma bitRev_four_mul_add_one (w b : ℕ) :
     bitRev (w + 2) (4 * b + 1) = 2 ^ (w + 1) + bitRev w b := by
       rw [show 4 * b + 1 = 2 * (2 * b) + 1 by ring]
       simp +decide [Nat.add_mod, Nat.pow_succ']; ring_nf
       norm_num [show 1 + b * 4 = 2 * (b * 2) + 1 by ring, Nat.add_div]
-
-lemma bitRev_four_mul_add_two (w b : ℕ) :
-    bitRev (w + 2) (4 * b + 2) = 2 ^ w + bitRev w b := by
-      rw [show 4 * b + 2 = 2 * (2 * b + 1) by ring, bitRev]
-      norm_num [Nat.add_div]
-
-lemma bitRev_four_mul_add_three (w b : ℕ) :
-    bitRev (w + 2) (4 * b + 3) = 2 ^ (w + 1) + 2 ^ w + bitRev w b := by
-      norm_num [Nat.add_mod, Nat.mul_mod, Nat.add_div]; ring_nf
-      norm_num [show b * 4 / 2 = b * 2 by
-        rw [Nat.div_eq_of_eq_mul_left zero_lt_two]; ring]; ring
 
 /-! ### ntt_sub_input stride-4 relations -/
 
@@ -342,7 +295,8 @@ lemma ntt_sub_input_block_0 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     ntt_sub_input n q (by omega) hm_eq v (4 * b) j =
     ntt_sub_input n (q + 2) hq2 hm_eq v b ⟨4 * j.val, fin_4mul_lt q j⟩ := by
       unfold ntt_sub_input
-      -- Apply the lemma bitRev_four_mul to rewrite the left-hand side.
+      -- The two low bits of `4 * b` are zero, so its bit-reversal at width `n - q`
+      -- equals the bit-reversal of `b` at width `n - q - 2`.
       have h_bitRev : bitRev (n - q) (4 * b) = bitRev (n - q - 2) b := by
         rcases k : n - q with (_ | _ | k) <;>
           simp_all +decide [Nat.pow_succ', Nat.mul_assoc]
@@ -477,85 +431,6 @@ lemma ref_ntt_radix4_q3 {R : Type*} [CommRing R] (q : ℕ) (ω : R)
          simp only [ref_ntt]
          simp_all +decide [Nat.pow_succ']
          ring_nf at *
-
-/-
-UInt64 butterfly position arithmetic: in the NTT context, all butterfly positions
-    are in bounds and equal the expected natural number values.
--/
-lemma ntt_butterfly_bounds {m : UInt64} (n q : ℕ) (hq2 : q + 2 ≤ n)
-    (hm_eq : m.toNat = 2 ^ n)
-    (len : UInt64) (hlen : len.toNat = 2 ^ (q + 1))
-    (b j2 : ℕ) (hb : b < 2 ^ (n - (q + 2))) (hj2 : j2 < 2 ^ q) :
-    let s := len >>> 1
-    let i2 := (b * 2 * len.toNat).toUInt64
-    -- s value
-    s.toNat = 2 ^ q ∧
-    -- i2 value
-    i2.toNat = b * 2 ^ (q + 2) ∧
-    -- Position 0: i2 + j2
-    (i2 + j2.toUInt64).toNat = b * 2 ^ (q + 2) + j2 ∧
-    (i2 + j2.toUInt64).toNat < m.toNat ∧
-    -- Position 1: i2 + j2 + s
-    (i2 + j2.toUInt64 + s).toNat = b * 2 ^ (q + 2) + j2 + 2 ^ q ∧
-    (i2 + j2.toUInt64 + s).toNat < m.toNat ∧
-    -- Position 2: i2 + len + j2
-    (i2 + len + j2.toUInt64).toNat = b * 2 ^ (q + 2) + 2 ^ (q + 1) + j2 ∧
-    (i2 + len + j2.toUInt64).toNat < m.toNat ∧
-    -- Position 3: i2 + len + j2 + s
-    (i2 + len + j2.toUInt64 + s).toNat = b * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2 ∧
-    (i2 + len + j2.toUInt64 + s).toNat < m.toNat ∧
-    -- Root positions
-    (s + j2.toUInt64).toNat = 2 ^ q + j2 ∧
-    (s + j2.toUInt64).toNat < m.toNat ∧
-    (len + j2.toUInt64).toNat = 2 ^ (q + 1) + j2 ∧
-    (len + j2.toUInt64).toNat < m.toNat ∧
-    (len + j2.toUInt64 + s).toNat = 2 ^ (q + 1) + j2 + 2 ^ q ∧
-    (len + j2.toUInt64 + s).toNat < m.toNat := by
-  have h_bounds : b * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2 < 2 ^ n := by
-    rw [show n = q + 2 + (n - (q + 2)) by rw [Nat.add_sub_cancel' hq2]] ; ring_nf at *
-    nlinarith [pow_pos (by decide : 0 < 2) q]
-  simp_all +decide [Nat.pow_succ', Nat.mul_assoc]
-  norm_num [Nat.shiftRight_eq_div_pow] at *
-  have h_bounds : 2 ^ n ≤ 18446744073709551616 := by
-    have h_bounds : m.toNat < 2 ^ 64 := by
-      exact m.toNat_lt
-    linarith
-  omega
-
-/-
-Butterfly positions for different (b, j2) or different quadrants are distinct.
--/
-lemma ntt_butterfly_disjoint (q b b' j2 j2' : ℕ)
-    (hj2 : j2 < 2 ^ q) (hj2' : j2' < 2 ^ q)
-    (hne : b ≠ b' ∨ j2 ≠ j2') :
-    b * 2 ^ (q + 2) + j2 ≠ b' * 2 ^ (q + 2) + j2' ∧
-    b * 2 ^ (q + 2) + j2 ≠ b' * 2 ^ (q + 2) + j2' + 2 ^ q ∧
-    b * 2 ^ (q + 2) + j2 ≠ b' * 2 ^ (q + 2) + 2 ^ (q + 1) + j2' ∧
-    b * 2 ^ (q + 2) + j2 ≠ b' * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2' ∧
-    b * 2 ^ (q + 2) + j2 + 2 ^ q ≠ b' * 2 ^ (q + 2) + j2' ∧
-    b * 2 ^ (q + 2) + j2 + 2 ^ q ≠ b' * 2 ^ (q + 2) + j2' + 2 ^ q ∧
-    b * 2 ^ (q + 2) + j2 + 2 ^ q ≠ b' * 2 ^ (q + 2) + 2 ^ (q + 1) + j2' ∧
-    b * 2 ^ (q + 2) + j2 + 2 ^ q ≠
-        b' * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2' ∧
-    b * 2 ^ (q + 2) + 2 ^ (q + 1) + j2 ≠ b' * 2 ^ (q + 2) + j2' ∧
-    b * 2 ^ (q + 2) + 2 ^ (q + 1) + j2 ≠ b' * 2 ^ (q + 2) + j2' + 2 ^ q ∧
-    b * 2 ^ (q + 2) + 2 ^ (q + 1) + j2 ≠
-        b' * 2 ^ (q + 2) + 2 ^ (q + 1) + j2' ∧
-    b * 2 ^ (q + 2) + 2 ^ (q + 1) + j2 ≠
-        b' * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2' ∧
-    b * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2 ≠ b' * 2 ^ (q + 2) + j2' ∧
-    b * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2 ≠
-        b' * 2 ^ (q + 2) + j2' + 2 ^ q ∧
-    b * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2 ≠
-        b' * 2 ^ (q + 2) + 2 ^ (q + 1) + j2' ∧
-    b * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2 ≠
-        b' * 2 ^ (q + 2) + 2 ^ (q + 1) + 2 ^ q + j2' := by
-  by_cases h : b = b' <;>
-      simp_all +decide only [ne_eq, Nat.add_right_cancel_iff, false_or, Nat.pow_succ']
-  · omega
-  · refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-      intro H <;> contrapose! h <;>
-      nlinarith [pow_pos (by decide : 0 < 2) q]
 
 /-- Position arithmetic for block `b'`, with ℕ size bound `m`. -/
 lemma ntt_block_pos_arith_nat {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)

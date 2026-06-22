@@ -3,7 +3,11 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib
+import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Algebra.Ring.Defs
+import Mathlib.AlgebraicTopology.SimplexCategory.Basic
+import Mathlib.Data.Fintype.Basic
 /-!
 # DFT Algebraic Lemmas
 

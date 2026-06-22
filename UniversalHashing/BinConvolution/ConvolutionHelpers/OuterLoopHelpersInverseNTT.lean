@@ -3,7 +3,6 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
@@ -224,7 +223,8 @@ lemma ntt_sub_input_inv_block_0 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     ntt_sub_input_inv n q (by omega) hm_eq v (4 * b) j =
     ntt_sub_input_inv n (q + 2) hq2 hm_eq v b ⟨4 * j.val, fin_4mul_lt q j⟩ := by
       unfold ntt_sub_input_inv
-      -- Apply the lemma bitRev_four_mul to rewrite the left-hand side.
+      -- The two low bits of `4 * b` are zero, so its bit-reversal at width `n - q`
+      -- equals the bit-reversal of `b` at width `n - q - 2`.
       have h_bitRev : bitRev (n - q) (4 * b) = bitRev (n - q - 2) b := by
         rcases k : n - q with (_ | _ | k) <;> simp_all +decide [Nat.pow_succ', Nat.mul_assoc]
         lia

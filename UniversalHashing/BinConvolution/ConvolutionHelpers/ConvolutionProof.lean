@@ -44,6 +44,27 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
   Termination (q = n, group size m, single group b=0): σ_{n-n} = id, stride = 1, so
       a[k] = dft m ω_m (fun j => toMont(v[j])) k.val = ref_ntt n ω f (Fin.cast hm_eq k).
 -/
+/-- Shared parity computation for the forward and inverse outer-loop proofs.
+From the starting stride `start ∈ {2, 4}` (it is `4` iff `log₂ m` is odd), derive that
+`start = 2^(start_q + 1)` and that `n - start_q` is even, where `start_q = if … then 1 else 0`. -/
+private lemma outerLoop_parity_facts (m n : ℕ) (hm_eq : m = 2 ^ n) (hn : n < 64)
+    (start : UInt64)
+    (hstart : start = if nttInplace.go 64 m 0 &&& 1 != 0 then 4 else 2) :
+    start.toNat = 2 ^ ((if nttInplace.go 64 m 0 &&& 1 != 0 then 1 else 0) + 1)
+      ∧ Even (n - (if nttInplace.go 64 m 0 &&& 1 != 0 then 1 else 0)) := by
+  refine ⟨?_, ?_⟩
+  · rw [hstart]; split_ifs with hp <;> simp_all
+  · split_ifs with hp
+    · -- `start_q = 1`: `log₂ m` is odd, so `n` is odd and `n - 1` is even
+      rcases Nat.even_or_odd n with he | ⟨k, hk⟩
+      · exact absurd (go_parity_even_nat m n hm_eq hn he) (by simp_all)
+      · rw [hk]; ring_nf; exact ⟨k, by omega⟩
+    · -- `start_q = 0`: `log₂ m` is even, so `n` is even
+      simp only [Nat.sub_zero]
+      rcases Nat.even_or_odd n with he | ho
+      · exact he
+      · exact absurd (Ne.symm (go_parity_odd_nat m n hm_eq hn ho)) (by simp_all)
+
 lemma ntt_outerLoop_computes_ref_ntt {m : ℕ} (n : ℕ)
     (hm_eq : m = 2 ^ n)
     (h_dvd : 2 ^ n ∣ mod64.toNat - 1)
@@ -74,27 +95,10 @@ lemma ntt_outerLoop_computes_ref_ntt {m : ℕ} (n : ℕ)
   have h_preproc := preprocessing_establishes_inv n hm_eq (hm_eq ▸ h_dvd) v hv_bound roots hroots
   simp only at h_preproc
   obtain ⟨hle, hinv⟩ := h_preproc
-  -- Step 2: Identify start_q and its relation to start.
-  set parity := (nttInplace.go 64 m 0 &&& 1 != 0) with hparity_def
-  set start_q := (if parity then 1 else 0) with hstart_q_def
-  -- Step 3: Show start matches 2^(start_q + 1).
-  have hstart_val : start.toNat = 2 ^ (start_q + 1) := by
-    rw [hstart, hstart_q_def]
-    split_ifs with hp <;> simp_all
-  -- Step 4: Show (n - start_q) is even.
-  have hq_even : Even (n - start_q) := by
-    rw [hstart_q_def]
-    split_ifs with hp
-    · -- parity = true means n is odd, so n - 1 is even
-      rcases Nat.even_or_odd n with he | ⟨k, hk⟩
-      · exact absurd (go_parity_even_nat m n hm_eq hn he) (by simp [parity] at hp; simp [hp])
-      · rw [hk]; ring_nf; exact ⟨k, by omega⟩
-    · -- parity = false means n is even, so n - 0 = n is even
-      simp only [Nat.sub_zero]
-      rcases Nat.even_or_odd n with he | ho
-      · exact he
-      · exact absurd (Ne.symm (go_parity_odd_nat m n hm_eq hn ho))
-          (by simp [parity] at hp; simp [hp])
+  -- Steps 2–4: derive `start_q`, `start = 2^(start_q+1)`, and `Even (n - start_q)` (shared helper).
+  set parity := (nttInplace.go 64 m 0 &&& 1 != 0)
+  set start_q := (if parity then 1 else 0)
+  obtain ⟨hstart_val, hq_even⟩ := outerLoop_parity_facts m n hm_eq hn start hstart
   -- Step 5: Show ha_in matches the preprocessing output.
   have ha_in_eq : a_in = (if parity then radix2Pass (m / 2) 0
       (bitRevLoop (m - 1) 0 (v.map toMont) 0)
@@ -286,21 +290,9 @@ lemma ntt_outerLoop_inv_computes_ref_ntt {m : ℕ} (n : ℕ)
   have h_preproc := preprocessing_establishes_inv_inverse n hm_eq (hm_eq ▸ h_dvd) v hv_bound
   simp only at h_preproc
   obtain ⟨hle, hinv⟩ := h_preproc
-  set parity := (nttInplace.go 64 m 0 &&& 1 != 0) with hparity_def
-  set start_q := (if parity then 1 else 0) with hstart_q_def
-  have hstart_val : start.toNat = 2 ^ (start_q + 1) := by
-    rw [hstart, hstart_q_def]; split_ifs with hp <;> simp_all
-  have hq_even : Even (n - start_q) := by
-    rw [hstart_q_def]
-    split_ifs with hp
-    · rcases Nat.even_or_odd n with he | ⟨k, hk⟩
-      · exact absurd (go_parity_even_nat m n hm_eq hn he) (by simp [parity] at hp; simp [hp])
-      · rw [hk]; ring_nf; exact ⟨k, by omega⟩
-    · simp only [Nat.sub_zero]
-      rcases Nat.even_or_odd n with he | ho
-      · exact he
-      · exact absurd (Ne.symm (go_parity_odd_nat m n hm_eq hn ho))
-          (by simp [parity] at hp; simp [hp])
+  set parity := (nttInplace.go 64 m 0 &&& 1 != 0)
+  set start_q := (if parity then 1 else 0)
+  obtain ⟨hstart_val, hq_even⟩ := outerLoop_parity_facts m n hm_eq hn start hstart
   have ha_in_eq : a_in = (if parity then radix2Pass (m / 2) 0
       (bitRevLoop (m - 1) 0 v 0)
     else bitRevLoop (m - 1) 0 v 0) := by
@@ -606,22 +598,27 @@ theorem vec_circ_conv_zero_padded {n m : ℕ} (a b : BitVec n)
         · omega
   · aesop
 
-/-
-ω = primRoot^((p-1)/m) is a primitive m-th root of unity in ZMod p.
--/
+/-- `ω = primRoot ^ ((p-1)/m)` is a primitive `m`-th root of unity in `ZMod p`.
+
+Apply `IsPrimitiveRoot.pow_of_dvd` to the primitive `(p-1)`-th root `primRoot`
+(`prim_root_PRIM_ROOT`) with divisor `d = (p-1)/m`; it yields a primitive `((p-1)/d)`-th
+root, leaving three side goals: the order `(p-1)/d = m`, that `d ≠ 0`, and that `d ∣ (p-1)`. -/
 theorem omega_is_prim_root {m : ℕ}
     (hm_pow2 : Nat.isPowerOfTwo m)
     (hm_dvd : m ∣ mod64.toNat - 1) :
     IsPrimitiveRoot ((primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / m)) m := by
   obtain ⟨k, hk⟩ := hm_dvd
   convert IsPrimitiveRoot.pow_of_dvd (prim_root_PRIM_ROOT) _ _ using 1
-  · rw [Nat.div_div_self] <;> norm_num [hk]
+  · -- order matches: `m = (p-1) / ((p-1)/m)`
+    rw [Nat.div_div_self] <;> norm_num [hk]
     exact ⟨by rintro rfl; simp only [Nat.zero_mul] at hk; exact absurd hk (by decide),
            by rintro rfl; simp only [mul_zero] at hk; exact absurd hk (by decide)⟩
-  · rw [hk, Nat.mul_div_cancel_left] <;> norm_num
+  · -- divisor is nonzero: `(p-1)/m ≠ 0`
+    rw [hk, Nat.mul_div_cancel_left] <;> norm_num
     · rintro rfl; simp only [Nat.mul_zero] at hk; exact absurd hk (by decide)
     · cases hm_pow2 ; aesop
-  · exact Nat.div_dvd_of_dvd (hk.symm ▸ dvd_mul_right _ _)
+  · -- divisor divides `p-1`: `(p-1)/m ∣ (p-1)`
+    exact Nat.div_dvd_of_dvd (hk.symm ▸ dvd_mul_right _ _)
 
 /-
 m > 1 when it's a power of 2 dividing p-1 and the NTT has a meaningful size.
@@ -687,34 +684,6 @@ theorem prod_bound {m : ℕ}
   simp_all only [Vector.getElem_map, Vector.getElem_zip,
       decide_eq_true_eq, UInt32.lt_iff_toNat_lt]
   have := mont_mul_correct FA[i] FB[i] hFA hFB; aesop
-
-/-
-In a field, if ω^m = 1 and m > 0, then ω⁻¹ = ω^(m-1).
--/
-theorem inv_eq_pow_pred (m : ℕ) (hm : 0 < m)
-    (ω : ZMod mod32.toNat) (hω : IsPrimitiveRoot ω m) :
-    ω⁻¹ = ω ^ (m - 1) := by
-  exact inv_eq_of_mul_eq_one_right (by rw [← pow_succ', Nat.sub_add_cancel hm, hω.pow_eq_one])
-
-/-
-The mod-m reduction for orthogonality: (i + l + k*(m-1)) % m = (i + l + m - k) % m.
--/
-theorem ortho_mod_eq (m i l k : ℕ) (hm : 0 < m) (hk : k < m) :
-    (i + l + k * (m - 1)) % m = (i + l + m - k) % m := by
-  zify [hm]
-  rw [Nat.cast_sub (by linarith)]
-  push_cast
-  ring_nf
-  norm_num [Int.add_emod, Int.sub_emod, Int.mul_emod]
-
-/-
-For i, k in Fin m, (i + (k+m-i)%m) % m = k.
--/
-theorem circ_index_mod (m : ℕ) (i k : Fin m) :
-    (i.val + (k.val + m - i.val) % m) % m = k.val := by
-  rw [Nat.add_mod, Nat.mod_mod, ← Nat.add_mod]
-  rw [add_tsub_cancel_of_le (by linarith [Fin.is_lt i, Fin.is_lt k])]
-  norm_num [Nat.mod_eq_of_lt]
 
 /-
 m cast to ZMod mod32.toNat is nonzero when m divides p-1 (and 1 < m).

@@ -86,16 +86,6 @@ lemma rootsInner_preserves_below (wm : UInt32) (halfLen : ℕ) {n : ℕ}
   | succ k ih => unfold rootsInner; grind
 
 /-
-`rootsInner` does not modify positions strictly above `halfLen + i + k`.
--/
-lemma rootsInner_preserves_above (wm : UInt32) (halfLen : ℕ) {n : ℕ}
-    (k i pos : ℕ) (v : Vector UInt32 n) (hpos : pos < n) (h : pos > halfLen + i + k) :
-    (rootsInner wm halfLen k i v)[pos]'hpos = v[pos]'hpos := by
-  induction k generalizing i v with
-  | zero => rfl
-  | succ k ih => rw [rootsInner]; grind
-
-/-
 When `wm.toNat = (w * montR1.toNat) % mod64`, the iterated product satisfies
 `(montPow montR1 wm j).toNat = (w ^ j * montR1.toNat) % mod64`.
 This is the Montgomery-domain geometric series: montR1 = R, and multiplying by
@@ -168,20 +158,6 @@ lemma pow2_toUInt64_halfLen (s : ℕ) (hs : s < 63) :
 lemma pow2_toUInt64_shift (s : ℕ) (hs : s < 63) :
     ((2 ^ (s + 1) : ℕ).toUInt64 <<< 1) = (2 ^ (s + 2) : ℕ).toUInt64 := by
   interval_cases s <;> trivial
-
-/-
-When `len = 0`, the outer loop only modifies position 0.
-Any position `pos ≥ 1` is preserved.
--/
-lemma outer_zero_preserves (n : ℕ) (v : Vector UInt32 n) (hn : 0 < n)
-    (f : ℕ) (pos : ℕ) (hpos : pos < n) (hge1 : 1 ≤ pos) :
-    (ensureRoots.outer n v 0 hn f)[pos]'hpos = v[pos]'hpos := by
-  induction f generalizing v with
-  | zero => rfl
-  | succ f ih =>
-    unfold ensureRoots.outer
-    rcases pos with (_ | pos) <;> simp_all [rootsInner]
-
 
 /-
 After the target iteration, subsequent iterations of the outer loop
@@ -421,26 +397,6 @@ lemma to_mont_mont_r1 (a : UInt32) (ha : a.toNat < mod32.toNat) :
   unfold montMulNat; norm_num [MONT_PPRIME_spec, MONT_R2_spec, MONT_R1_spec] 
   norm_num [show mod64.toNat = 3 * 2 ^ 30 + 1 by rfl, show montPprime.toNat = 3221225471 by rfl]
   rw [show mod32.toNat = 3221225473 by rfl] ; omega
-
-/-
-The twiddle factor `wm` used in `ensureRoots.outer` satisfies the `montPow_spec` hypothesis.
--/
-lemma wm_spec (K : ℕ) (hK : K < 63) (n : ℕ) (hlen : 2 ^ (K + 1) ≤ n) :
-    let len := (2 ^ (K + 1) : ℕ).toUInt64
-    let wm := toMont ((powModU64 primRoot ((mod64 - 1) / len) mod64).toUInt32)
-    let w := primRoot.toNat ^ ((mod64.toNat - 1) / 2 ^ (K + 1)) % mod64.toNat
-    wm.toNat = (w * montR1.toNat) % mod32.toNat := by
-  convert to_mont_mont_r1 _ _
-  · have h_mod_lt :
-          (powModU64 primRoot ((mod64 - 1) / (2 ^ (K + 1)).toUInt64) mod64).toNat < 2 ^ 32 := by
-      have h := powmod_correct primRoot ((mod64 - 1) / (2 ^ (K + 1)).toUInt64) mod64
-                  (by decide) (by decide)
-      rw [h]; exact (Nat.mod_lt _ (by decide)).trans_le (by decide)
-    convert (powmod_correct primRoot ((mod64 - 1) / (2 ^ (K + 1)).toUInt64) mod64
-              (by decide) (by decide)).symm using 2
-    · congr 1; interval_cases K <;> rfl
-    · exact Nat.mod_eq_of_lt h_mod_lt
-  · interval_cases K <;> decide
 
 /-
 Generalized loop invariant for `ensureRoots.outer`:

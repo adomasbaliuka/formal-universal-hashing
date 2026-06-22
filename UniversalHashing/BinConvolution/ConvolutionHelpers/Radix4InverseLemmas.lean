@@ -10,7 +10,9 @@ import Mathlib.Tactic.Ring.RingNF
 import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
 import UniversalHashing.BinConvolution.ConvolutionDefs
 
-/-
+/-!
+# Radix-4 inverse butterfly
+
   Level 3g – butterfly4 inverse: structural and ZMod-level correctness.
 
   The inverse butterfly uses negated twiddles: instead of `roots[s+j2]` for t1 it uses
@@ -475,15 +477,6 @@ lemma inverse_t3_bound {N : ℕ} (roots : Vector UInt32 N)
       Nat.mul_div_cancel_left _ (by norm_num : (2 : ℕ) > 0)]; omega
   · rw [show 2 * len / 2 = len from
       Nat.mul_div_cancel_left _ (by norm_num : (2 : ℕ) > 0)]; omega
-
-private lemma uint64_two_mul_sub (x j2 : UInt64)
-    (hj2 : j2.toNat < x.toNat) (h2x : 2 * x.toNat < 2 ^ 64) :
-    (2 * x - j2).toNat = x.toNat + (x.toNat - j2.toNat) := by
-  rw [UInt64.toNat_sub, UInt64.toNat_mul]
-  have h2 : (2 : UInt64).toNat = 2 := by decide
-  rw [h2, Nat.mod_eq_of_lt h2x]
-  rw [show 2 ^ 64 - j2.toNat + 2 * x.toNat = 2 ^ 64 + (x.toNat + (x.toNat - j2.toNat)) by omega]
-  rw [Nat.add_mod_left, Nat.mod_eq_of_lt (by omega)]
 
 -- The ZMod correctness proof for inverse butterfly4 at position 0 requires many rewrites.
 lemma butterfly4_inverse_ZMod_pos0 {N : ℕ}

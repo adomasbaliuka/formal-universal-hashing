@@ -18,6 +18,14 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
 import UniversalHashing.BinConvolution.ConvolutionDefs
 
+/-!
+# Radix-4 forward butterfly
+
+`ntt_roots_correct`, the `radix2Pass` correctness lemmas, and the forward radix-4 butterfly
+(`butterfly4_forward_*`) culminating in `butterfly4_forward_ZMod_combined`. Split out of the
+former `SolutionHelpers.lean`.
+-/
+
 /-- A root table is correct for an `m`-point NTT when every entry at index `len/2 + j`
     holds the twiddle factor `ω_{len}^j` in the Montgomery domain (multiplied by R),
     where `ω_{len} = primRoot ^ ((mod64 - 1) / len)` is a primitive `len`-th root of unity
@@ -279,29 +287,7 @@ lemma ntt_roots_correct_at {N : ℕ} (roots : Vector UInt32 N)
   subst heq; exact hroots len j h2 hdvd hj hidx
 
 -- Helper: montMul ZMod when the right factor equals τ * 2^32.
--- Cancels the Montgomery 2^32 factor: (montMul a t).toNat = a.toNat * τ in ZMod.
-lemma mont_mul_zmod_right_twiddle (a t : UInt32) (τ : ZMod mod32.toNat)
-    (ha : a.toNat < mod32.toNat) (ht : t.toNat < mod32.toNat)
-    (ht_z : (t.toNat : ZMod mod32.toNat) = τ * 2 ^ 32) :
-    ((montMul a t).toNat : ZMod mod32.toNat) = (a.toNat : ZMod mod32.toNat) * τ := by
-  have h2ne : (2 : ZMod mod32.toNat) ^ 32 ≠ 0 := two_pow32_ne_zero_ZMod
-  rw [mont_mul_ZMod _ _ ha ht, ht_z,
-      (by ring : (a.toNat : ZMod mod32.toNat) * (τ * 2 ^ 32) * (2 ^ 32)⁻¹ =
-           (a.toNat : ZMod mod32.toNat) * τ * (2 ^ 32 * (2 ^ 32)⁻¹)),
-      mul_inv_cancel₀ h2ne, mul_one]
-
 -- Helper: montMul ZMod when the left factor equals τ * 2^32.
--- Cancels the Montgomery 2^32 factor: (montMul a t).toNat = τ * t.toNat in ZMod.
-lemma mont_mul_zmod_left_twiddle (a t : UInt32) (τ : ZMod mod32.toNat)
-    (ha : a.toNat < mod32.toNat) (ht : t.toNat < mod32.toNat)
-    (ha_z : (a.toNat : ZMod mod32.toNat) = τ * 2 ^ 32) :
-    ((montMul a t).toNat : ZMod mod32.toNat) = τ * (t.toNat : ZMod mod32.toNat) := by
-  have h2ne : (2 : ZMod mod32.toNat) ^ 32 ≠ 0 := two_pow32_ne_zero_ZMod
-  rw [mont_mul_ZMod _ _ ha ht, ha_z,
-      (by ring : (τ * 2 ^ 32) * (t.toNat : ZMod mod32.toNat) * (2 ^ 32)⁻¹ =
-           τ * (t.toNat : ZMod mod32.toNat) * (2 ^ 32 * (2 ^ 32)⁻¹)),
-      mul_inv_cancel₀ h2ne, mul_one]
-
 -- Helper: Vector.getD idx 0 = Vector[idx]'h when idx < N.
 lemma vector_getD_eq_getElem {α : Type*} {N : ℕ} (v : Vector α N)
     (idx : ℕ) (h : idx < N) (default : α) :
@@ -515,57 +501,6 @@ lemma radix4Inner_comp {N : ℕ} (roots : Vector UInt32 N) (inverse : Bool)
 
 /- Level 3f – butterfly4 ZMod-level correctness at the four output positions. -/
 
-private lemma add_len_s_ne_zero_helper (s len : UInt64)
-    (hlen : len.toNat = 2 * s.toNat) (hlen_lt : len.toNat < 2 ^ 64) (hs_pos : 0 < s.toNat) :
-    len + s ≠ 0 := by
-  have hnat : (len + s).toNat ≠ 0 := by
-    rw [UInt64.toNat_add, hlen]
-    rcases Nat.lt_or_ge (2 * s.toNat + s.toNat) (2 ^ 64) with hlt | hge
-    · rw [Nat.mod_eq_of_lt hlt]; omega
-    · rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt (by omega)]; omega
-  exact fun h => hnat (by simp only [h, UInt64.toNat_zero])
-
-private lemma add_shifted_ne_helper (s len i2 j2 : UInt64)
-    (hlen : len.toNat = 2 * s.toNat) (hlen_lt : len.toNat < 2 ^ 64)
-    (hs_pos : 0 < s.toNat) (hi2j2_lt : (i2 + j2).toNat < 2 ^ 64) :
-    i2 + len + j2 + s ≠ i2 + j2 := by
-  have hnat : (i2 + len + j2 + s).toNat ≠ (i2 + j2).toNat := by
-    have hlens_pos : (len + s).toNat ≠ 0 := by
-      rw [UInt64.toNat_add, hlen]
-      rcases Nat.lt_or_ge (2 * s.toNat + s.toNat) (2 ^ 64) with hlt | hge
-      · rw [Nat.mod_eq_of_lt hlt]; omega
-      · rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt (by omega)]; omega
-    have hls_lt : (len + s).toNat < 2 ^ 64 := (len + s).toNat_lt
-    have h1 : (i2 + len + j2 + s).toNat = ((i2 + j2).toNat + (len + s).toNat) % 2 ^ 64 := by
-      have : i2 + len + j2 + s = (i2 + j2) + (len + s) := by abel
-      rw [this]; exact UInt64.toNat_add (i2 + j2) (len + s)
-    rw [h1]
-    rcases Nat.lt_or_ge ((i2 + j2).toNat + (len + s).toNat) (2^64) with hlt | hge
-    · rw [Nat.mod_eq_of_lt hlt]; omega
-    · rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt (by omega)]; omega
-  exact fun h => hnat (congr_arg UInt64.toNat h)
-
-private lemma butterfly4_forward_idx_bounds {N : ℕ} (s len j2 : UInt64)
-    (hlen : len.toNat = 2 * s.toNat) (hlen_dvd : 2 * len.toNat ∣ N)
-    (hj2 : j2.toNat < s.toNat) (hN_le : N ≤ 2 ^ 64) (hN_pos : 0 < N) :
-    (s + j2).toNat < N ∧ (len + j2).toNat < N ∧ (len + j2 + s).toNat < N := by
-  have h_s_j2 : (s + j2).toNat < N := by
-    simp only [UInt64.toNat_add] at *
-    norm_num [hlen] at hlen_dvd hN_le
-    exact lt_of_le_of_lt (Nat.mod_le _ _)
-      (by linarith [Nat.le_of_dvd hN_pos hlen_dvd])
-  refine ⟨h_s_j2, ?_, ?_⟩
-  · obtain ⟨k, hk⟩ := hlen_dvd
-    have hk_pos : 0 < k := Nat.pos_of_ne_zero (by intro h; simp only [h, mul_zero] at hk; omega)
-    rw [UInt64.toNat_add] at *
-    rw [Nat.mod_eq_of_lt] <;> nlinarith
-  · obtain ⟨k, hk⟩ := hlen_dvd
-    rcases k with (_ | _ | k) <;>
-      simp_all +decide only [UInt64.toNat_add, Nat.reducePow,
-                             Nat.mod_add_mod, Nat.mul_zero, lt_irrefl]
-    · omega
-    · rw [Nat.mod_eq_of_lt] <;> nlinarith only [hj2, hN_le]
-
 private lemma butterfly4_forward_idx_bounds_nat {N : ℕ} (s len j2 : ℕ)
     (hlen : len = 2 * s) (hlen_dvd : 2 * len ∣ N) (hj2 : j2 < s) (hN_pos : 0 < N) :
     s + j2 < N ∧ len + j2 < N ∧ len + j2 + s < N := by
@@ -573,34 +508,6 @@ private lemma butterfly4_forward_idx_bounds_nat {N : ℕ} (s len j2 : ℕ)
   omega
 
 -- Root ZMod values for the three forward butterfly twiddle positions,
--- proved once for all pos lemmas.
-private lemma butterfly4_forward_root_values {N : ℕ}
-    (roots : Vector UInt32 N) (hroots : ntt_roots_correct N roots)
-    (s len j2 : ℕ) (hlen : len = 2 * s) (hlen_dvd : 2 * len ∣ N) (hj2 : j2 < s)
-    (ht1 : s + j2 < N) (ht2 : len + j2 < N) (ht3 : len + j2 + s < N) :
-    ((roots[s + j2]'ht1).toNat : ZMod mod32.toNat) =
-        (primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / len * j2)
-          * (montR1.toNat : ZMod mod32.toNat) ∧
-    ((roots[len + j2]'ht2).toNat : ZMod mod32.toNat) =
-        (primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / (2 * len) * j2)
-          * (montR1.toNat : ZMod mod32.toNat) ∧
-    ((roots[len + j2 + s]'ht3).toNat : ZMod mod32.toNat) =
-        (primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / (2 * len) * (s + j2))
-          * (montR1.toNat : ZMod mod32.toNat) := by
-  refine ⟨?_, ?_, ?_⟩
-  · apply ntt_roots_correct_at
-    · assumption
-    · omega
-    · exact dvd_of_mul_left_dvd hlen_dvd
-    · omega
-    · omega
-  · convert ntt_roots_correct_at roots hroots (2 * len) j2 (len + j2) _ _ _ _ using 1
-    any_goals omega
-    simp +decide
-  · convert ntt_roots_correct_at roots hroots (2 * len) (s + j2) (len + j2 + s) _ _ _ _ using 1
-    any_goals omega
-    simp +decide [add_comm, add_left_comm]
-
 -- Element and root bounds for forward butterfly4 inputs, proved once for all pos lemmas.
 private lemma butterfly4_forward_bounds {N : ℕ}
     (a : Vector UInt32 N) (ha : a.all (· < mod32))

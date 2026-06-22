@@ -3,7 +3,6 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
 

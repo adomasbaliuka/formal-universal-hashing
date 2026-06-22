@@ -3,7 +3,7 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib
+import Mathlib.Data.Nat.Bitwise
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas

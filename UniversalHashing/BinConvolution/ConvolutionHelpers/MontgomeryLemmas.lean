@@ -19,10 +19,6 @@ import UniversalHashing.BinConvolution.ConvolutionDefs
 section NTT_Constants
 
 
-theorem MOD32_bound : mod32.toNat = 3221225473 := by decide
-
-theorem MOD32_lt_two32 : mod32.toNat < 2 ^ 32 := by decide
-
 theorem prime_3221225473 : Nat.Prime 3221225473 := prime_cert%
   [small {3},
    pock3 (3221225473, 5, 1, 0, 2 ^ 30 * 3)]
@@ -30,8 +26,6 @@ theorem prime_3221225473 : Nat.Prime 3221225473 := prime_cert%
 theorem mod32_eq_mod : mod64.toNat = mod32.toNat := by decide
 
 theorem prime_mod : mod64.toNat.Prime := prime_3221225473
-
-theorem MOD_eq : mod64.toNat = (3 * 2^30 + 1) := by decide
 
 -- Montgomery arithmetic with R = 2^32 and modulus p = mod64.
 -- montR1   = R     mod p   (Montgomery representation of 1)
@@ -199,17 +193,6 @@ theorem submod32_correct (a b : UInt32)
       · omega
 
 /-
-Key divisibility: T + m*mod64 ≡ 0 (mod 2^32)
--/
-theorem mont_mul_nat_div32 (a b : ℕ) :
-    let T := a * b
-    let m := (T % 2^32 * montPprime.toNat) % 2^32
-    (T + m * mod64.toNat) % 2^32 = 0 := by
-  norm_num [montPprime, mod64]
-  norm_num [UInt32.toNat, UInt64.toNat]
-  omega
-
-/-
 S / 2^32 < 2 * mod64 when inputs < mod64
 -/
 theorem mont_mul_nat_u_bound (a b : ℕ)
@@ -225,35 +208,12 @@ theorem mont_mul_nat_u_bound (a b : ℕ)
   nlinarith [show mod64.toNat = 3221225473 by rfl]
 
 /-
-Step 1: UInt64 product doesn't overflow
--/
-theorem mont_T_toNat (a b : UInt32)
-    (ha : a.toNat < mod32.toNat) (hb : b.toNat < mod32.toNat) :
-    (a.toUInt64 * b.toUInt64).toNat = a.toNat * b.toNat := by
-  norm_num [UInt64.toNat_mul]
-  exact lt_of_lt_of_le (Nat.mul_lt_mul'' ha hb) (by decide)
-
-/-
 Step 2: m computation
 -/
 theorem mont_m_toNat (a b : UInt32) :
     ((a.toUInt64 * b.toUInt64).toUInt32 * montPprime).toNat =
       (a.toNat * b.toNat % 2^32 * montPprime.toNat) % 2^32 := by
   norm_num [UInt32.toNat_mul]
-
-/-
-Step 3: mp = m * mod64 doesn't overflow UInt64
--/
-theorem mont_mp_toNat (a b : UInt32) :
-    let m := (a.toUInt64 * b.toUInt64).toUInt32 * montPprime
-    (m.toUInt64 * mod64).toNat = m.toNat * mod64.toNat := by
-  -- Since $a$ and $b$ are both less than $2^{32}$, their product $a * b$ is less than $2^{64}$.
-  have h_prod_lt : (a.toNat * b.toNat) % 2^32 * montPprime.toNat % 2^32 * mod64.toNat < 2^64 := by
-    refine lt_of_le_of_lt
-        (Nat.mul_le_mul (Nat.mod_lt _ (by decide) |> Nat.le_of_lt) le_rfl) ?_
-    decide
-  norm_num [UInt64.toNat_mul] at *
-  simp [h_prod_lt]
 
 /-
 Step 4: u computation equals (T + mp) / 2^32

@@ -44,19 +44,6 @@ theorem mont_mul_nat_u_bound_left (a b : ℕ)
           show mod64.toNat = 3221225473 by rfl] 
 
 /-
-UInt64 product doesn't overflow when a < mod32 and b is any UInt32.
--/
-theorem mont_T_toNat_left (a b : UInt32)
-    (ha : a.toNat < mod32.toNat) :
-    (a.toUInt64 * b.toUInt64).toNat = a.toNat * b.toNat := by
-      norm_num [UInt64.toNat_mul]
-      have ha32 : a.toNat ≤ 4294967295 :=
-        Nat.le_of_lt_succ (lt_of_lt_of_le ha (by decide))
-      have hb32 : b.toNat ≤ 4294967295 :=
-        Nat.le_of_lt_succ (lt_of_lt_of_le b.toNat_lt (by decide))
-      exact lt_of_le_of_lt (Nat.mul_le_mul_right _ ha32) (by linarith [hb32])
-
-/-
 Step 4 (left-bounded): u = (a*b + m*mod64) / 2^32 when only a < mod32.
 -/
 theorem mont_u_toNat_left (a b : UInt32)
