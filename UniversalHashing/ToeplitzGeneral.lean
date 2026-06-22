@@ -3,15 +3,22 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Tactic
 import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Algebra.Order.Ring.Int
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.Algebra.Polynomial.BigOperators
-import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Analysis.Normed.Ring.Lemmas
+import Mathlib.Data.Finsupp.Defs
+import Mathlib.Data.Int.ConditionallyCompleteOrder
+import Mathlib.Data.Matrix.Basic
+import Mathlib.Data.ZMod.Defs
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Matrix.Circulant
+import Mathlib.LinearAlgebra.Matrix.Defs
+import Mathlib.Order.ConditionallyCompleteLattice.Basic
+import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Tactic.Linarith.Frontend
 
 /-! # Toeplitz Matrices
 This module defines Toeplitz matrices, i.e., matrices with constant diagonals.

@@ -163,7 +163,7 @@ private theorem sum_coincidence_mul_pred_le
         rw [Finset.sum_comm]
         simp only [univ_product_univ, sum_boole, Nat.cast_id]
         rw [Finset.sum_congr rfl fun _ _ =>
-          Finset.card_eq_one.mpr ⟨ ( H ‹_› x, H ‹_› y ), by aesop ⟩]
+          Finset.card_eq_one.mpr ⟨( H ‹_› x, H ‹_› y ), by aesop⟩]
         simp [Finset.card_univ]
       convert congr_arg ( fun x : ℚ => x / Fintype.card Seed ) h_count_total using 1
       · simp [probUniform, Finset.sum_div]

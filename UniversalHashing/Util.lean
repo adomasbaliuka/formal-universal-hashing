@@ -3,12 +3,15 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib
+import Mathlib.Analysis.Complex.Exponential
+import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Data.Real.StarOrdered
 
+/-!
+# Utility lemmas
 
-
-
-
+-/
 
 section Util
 
