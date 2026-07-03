@@ -23,6 +23,7 @@ Main result: `binToeplitz_mulVec_isUniversal2` shows that matrix-vector multipli
 with (binary) Toeplitz matrices is universal-2.
 -/
 
+
 open scoped Nat
 
 /--
@@ -88,7 +89,7 @@ theorem toeplitzHash.universal2 (m n : ℕ) [NeZero m] [NeZero n] :
     = (fun (M : BinToeplitzMatrix m n) v ↦ M.val.mulVec v) ∘ ToeplitzMatrix.from_params := rfl
   have := (HashFamily.universal2_of_comp_bijective
     (fun (M : BinToeplitzMatrix m n) v ↦ M.val.mulVec v) bij)
-  simp_all [toeplitzModp_mulVec_isUniversal2, Multiset.bijective_iff_map_univ_eq_univ]
+  simp_all [toeplitzModp_mulVec_isUniversal2]
 
 theorem Nat.ne_rat_ge1_of_lt1 (n : ℕ) (q : ℚ) (nne0 : n > 0) (qlt1 : q < 1) : n ≠ q := by aesop
 

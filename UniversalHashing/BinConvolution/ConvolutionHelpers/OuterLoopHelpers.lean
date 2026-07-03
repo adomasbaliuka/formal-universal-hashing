@@ -8,10 +8,10 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
 
 
-
 /-!
 # Helper lemmas for `ntt_outerLoop_computes_ref_ntt`
 -/
+
 
 /-- ℕ-variant: if `m = 2^n` and `m ∣ mod64.toNat - 1`, then `n < 64`. -/
 lemma n_lt_64_of_pow2_nat (m n : ℕ) (hm : m = 2 ^ n) (hm_dvd : m ∣ mod64.toNat - 1) :
@@ -187,7 +187,7 @@ lemma inv_at_n_implies_ref_ntt {m : ℕ} (n : ℕ)
   constructor <;> intro h r <;>
     specialize h ⟨r, by linarith [Fin.is_lt r, hm_eq]⟩ <;>
     simp_all only [Fin.getElem_fin, Fin.val_cast]
-  unfold ntt_sub_input; simp +decide [Fin.cast]
+  unfold ntt_sub_input; simp [Fin.cast]
 
 
 /-- When the block count is 0 (which happens when `len` is large enough relative to `m`
@@ -259,7 +259,7 @@ lemma outerLoop_noop_pow2 {m : ℕ} (inverse : Bool) (roots a : Vector UInt32 m)
 lemma bitRev_four_mul_add_one (w b : ℕ) :
     bitRev (w + 2) (4 * b + 1) = 2 ^ (w + 1) + bitRev w b := by
       rw [show 4 * b + 1 = 2 * (2 * b) + 1 by ring]
-      simp +decide [Nat.add_mod, Nat.pow_succ']; ring_nf
+      simp [Nat.add_mod, Nat.pow_succ']; ring_nf
       norm_num [show 1 + b * 4 = 2 * (b * 2) + 1 by ring, Nat.add_div]
 
 /-! ### ntt_sub_input stride-4 relations -/
@@ -299,7 +299,7 @@ lemma ntt_sub_input_block_0 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
       -- equals the bit-reversal of `b` at width `n - q - 2`.
       have h_bitRev : bitRev (n - q) (4 * b) = bitRev (n - q - 2) b := by
         rcases k : n - q with (_ | _ | k) <;>
-          simp_all +decide [Nat.pow_succ', Nat.mul_assoc]
+          simp_all [Nat.pow_succ', Nat.mul_assoc]
         lia
       -- Since the indices are the same, the elements at those indices are the same.
       have h_index_eq :
@@ -344,7 +344,7 @@ lemma ntt_sub_input_block_3 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
           bitRev (n - q) (4 * b + 3) =
           2 ^ (n - q - 1) + 2 ^ (n - q - 2) + bitRev (n - q - 2) b := by
         rcases n' : n - q with (_ | _ | n') <;>
-          simp_all +decide [Nat.pow_succ']
+          simp_all [Nat.pow_succ']
         · omega
         · omega
         · norm_num [Nat.add_mod, Nat.add_div, Nat.mul_mod, Nat.mul_div_assoc, Nat.mul_comm]; ring
@@ -394,8 +394,8 @@ lemma ref_ntt_radix4_q1 {R : Type*} [CommRing R] (q : ℕ) (ω : R)
        (ω ^ 2) ^ j2 * ref_ntt q (ω ^ 4)
           (fun j : Fin (2 ^ q) => f ⟨4 * j.val + 3, fin_4mul3_lt q j⟩) ⟨j2, hj2⟩) := by
          simp only [ref_ntt]
-         simp +decide [pow_succ', mul_left_comm, mul_comm]
-         simp +decide [show 2 * 2 ^ q = 2 ^ q + 2 ^ q by ring, hj2]
+         simp [pow_succ', mul_left_comm, mul_comm]
+         simp [show 2 * 2 ^ q = 2 ^ q + 2 ^ q by ring, hj2]
          ring_nf
 
 /-- Quadrant 2: position j2 + 2^(q+1). -/
@@ -411,7 +411,7 @@ lemma ref_ntt_radix4_q2 {R : Type*} [CommRing R] (q : ℕ) (ω : R)
        (ω ^ 2) ^ j2 * ref_ntt q (ω ^ 4)
           (fun j : Fin (2 ^ q) => f ⟨4 * j.val + 3, fin_4mul3_lt q j⟩) ⟨j2, hj2⟩) := by
   simp only [ref_ntt]
-  simp_all +decide [Nat.pow_succ']
+  simp_all [Nat.pow_succ']
   ring_nf at *
 
 /-
@@ -429,7 +429,7 @@ lemma ref_ntt_radix4_q3 {R : Type*} [CommRing R] (q : ℕ) (ω : R)
        (ω ^ 2) ^ j2 * ref_ntt q (ω ^ 4)
           (fun j : Fin (2 ^ q) => f ⟨4 * j.val + 3, fin_4mul3_lt q j⟩) ⟨j2, hj2⟩) := by
          simp only [ref_ntt]
-         simp_all +decide [Nat.pow_succ']
+         simp_all [Nat.pow_succ']
          ring_nf at *
 
 /-- Position arithmetic for block `b'`, with ℕ size bound `m`. -/

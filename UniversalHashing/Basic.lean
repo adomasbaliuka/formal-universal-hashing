@@ -39,10 +39,6 @@ A family H is strongly universal (also known as "pairwise independent") if
 
 -/
 
-set_option synthInstance.maxSize 128
-
-
-
 
 /--
 A **hash family** is a family of functions `Input → Output`.

@@ -28,8 +28,6 @@ import UniversalHashing.Util
 -/
 
 
-
-
 section StinsonBoundHelpers
 
 variable {Seed Input Output : Type*} [Fintype Seed] [Fintype Input] [Fintype Output]
@@ -396,7 +394,7 @@ theorem HashFamily.card_seed_lb_of_stronglyUniversal2
   by_cases hO2 : 2 ≤ Fintype.card Output
   · have hOpos : (Fintype.card Output : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
     have hO1pos : (Fintype.card Output : ℚ) - 1 ≠ 0 := by
-      linarith [show (2 : ℚ) ≤ Fintype.card Output from by exact_mod_cast hO2]
+      exact sub_ne_zero_of_ne (by exact_mod_cast (by omega : Fintype.card Output ≠ 1))
     have hdenom : Fintype.card Output * (1 / (Fintype.card Output : ℚ)) *
         ((Fintype.card Input : ℚ) - 1) + Fintype.card Output - Fintype.card Input =
         Fintype.card Output - 1 := by

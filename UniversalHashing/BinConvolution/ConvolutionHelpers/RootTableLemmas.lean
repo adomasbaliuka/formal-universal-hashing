@@ -15,6 +15,7 @@ import UniversalHashing.BinConvolution.ConvolutionDefs
 #  ── Root table
 -/
 
+
 /-
 `rootsInner wm halfLen k 0 v` sets position `halfLen + j` to `montPow v[halfLen] wm j`
 for every `j ≤ k` (provided indices are in bounds).
@@ -29,7 +30,8 @@ lemma rootsInner_montPow (wm : UInt32) (halfLen : ℕ) {n : ℕ}
     -- In the base case where `k = 0`, `rootsInner` returns `v` unchanged.
     intros j v hj
     simp only [rootsInner]
-    interval_cases j ; aesop -- grind +locals -- used to work before splitting file into multiple...
+    obtain rfl : j = 0 := Nat.le_zero.mp hj
+    rfl
   | succ k ih =>
     intro j v hj
     by_cases hj0 : j = 0
@@ -41,7 +43,9 @@ lemma rootsInner_montPow (wm : UInt32) (halfLen : ℕ) {n : ℕ}
           intros k i v; exact (by
           induction k generalizing i v with
           | zero => simp_all only [rootsInner]
-          | succ k ih => simp_all only [rootsInner]; grind)
+          | succ k ih =>
+            simp_all only [rootsInner]
+            split_ifs <;> first | rfl | (rw [Vector.getElem_set_ne]; omega))
         rw [h_preserve]
         rw [Vector.getElem_set] ; aesop
       · linarith
@@ -59,7 +63,9 @@ lemma rootsInner_montPow (wm : UInt32) (halfLen : ℕ) {n : ℕ}
             intros k i v
             induction k generalizing i v with
             | zero => simp_all only [rootsInner]
-            | succ k ih => simp_all only [rootsInner]; grind +qlia
+            | succ k ih =>
+              simp_all only [rootsInner]
+              rw [show halfLen + (i + 1) = halfLen + 1 + i from by omega]
           exact h_split k 0 v
       · rw [show rootsInner wm halfLen 1 0 v =
                   v.set (halfLen + 1) (montMul (v[halfLen]) wm)
@@ -83,7 +89,10 @@ lemma rootsInner_preserves_below (wm : UInt32) (halfLen : ℕ) {n : ℕ}
     (rootsInner wm halfLen k i v)[pos]'hpos = v[pos]'hpos := by
   induction k generalizing i v with
   | zero => rfl
-  | succ k ih => unfold rootsInner; grind
+  | succ k ih =>
+    simp only [rootsInner]
+    rw [ih (i + 1) _ (by omega)]
+    split_ifs <;> first | rfl | (rw [Vector.getElem_set_ne]; omega)
 
 /-
 When `wm.toNat = (w * montR1.toNat) % mod64`, the iterated product satisfies
@@ -120,7 +129,7 @@ lemma montPow_spec (wm : UInt32) (w j : ℕ)
       have h_ind_step :
           montMulNat (montPow montR1 wm j).toNat wm.toNat * 2 ^ 32 ≡
           w ^ (j + 1) * montR1.toNat * 2 ^ 32 [MOD mod32.toNat] := by
-        simp_all +decide only [← ZMod.natCast_eq_natCast_iff, mul_assoc, Nat.cast_mul,
+        simp_all only [← ZMod.natCast_eq_natCast_iff, mul_assoc, Nat.cast_mul,
                                Nat.cast_pow, Nat.reducePow, ZMod.natCast_mod]
         rw [MONT_R1_ZMod] ; ring
       simp_all only [Nat.modEq_iff_dvd, Nat.cast_mul, Nat.cast_pow, Nat.reducePow]
@@ -155,9 +164,10 @@ lemma pow2_toUInt64_halfLen (s : ℕ) (hs : s < 63) :
   rw [UInt64.toNat_div, nat_toUInt64_faithful _ hb, show (2 : UInt64).toNat = 2 from rfl, pow_succ]
   exact Nat.mul_div_cancel _ (by norm_num)
 
-lemma pow2_toUInt64_shift (s : ℕ) (hs : s < 63) :
+lemma pow2_toUInt64_shift (s : ℕ) (_hs : s < 63) :
     ((2 ^ (s + 1) : ℕ).toUInt64 <<< 1) = (2 ^ (s + 2) : ℕ).toUInt64 := by
-  interval_cases s <;> trivial
+  rw [← UInt64.toNat_inj]
+  simp [UInt64.toNat_shiftLeft, Nat.toUInt64, UInt64.toNat_ofNat, Nat.shiftLeft_eq, pow_succ]
 
 /-
 After the target iteration, subsequent iterations of the outer loop
@@ -384,7 +394,6 @@ lemma ensure_roots_base_case (n : ℕ) (hN : 0 < n)
         simp only [Nat.toUInt64_eq, UInt64.toNat_div, UInt64.toNat_ofNat', Nat.reducePow,
           UInt64.reduceToNat, Vector.getElem_set_self, v']]
   rw [montPow_spec wm _ j hwm, ← mod32_eq_mod]
-
 
 
 /-

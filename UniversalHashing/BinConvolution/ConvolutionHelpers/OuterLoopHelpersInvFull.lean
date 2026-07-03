@@ -14,12 +14,12 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInv
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForward
 
 
-
 /-!
 # Inverse NTT outer-loop: radix4Middle advance, outerLoop induction
 
 Mirrors `OuterLoopHelpersForward` for the inverse pass (`inverse = true`).
 -/
+
 
 /-- When `outerLoop_inv_inverse` holds at q = n, the array computes the DFT with ω⁻¹. -/
 lemma inv_at_n_implies_ref_ntt_inverse {m : ℕ} (n : ℕ)
@@ -41,8 +41,8 @@ lemma inv_at_n_implies_ref_ntt_inverse {m : ℕ} (n : ℕ)
   convert hthis using 1
   constructor <;> intro h r <;>
     specialize h ⟨r, by linarith [Fin.is_lt r, hm_eq]⟩ <;>
-    simp_all +decide only [Fin.getElem_fin, Fin.val_cast]
-  unfold ntt_sub_input_inv; simp +decide [Fin.cast]
+    simp_all only [Fin.getElem_fin, Fin.val_cast]
+  unfold ntt_sub_input_inv; simp [Fin.cast]
 
 lemma radix4Middle_advances_inv_inverse {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     (hm_eq : m = 2 ^ n)

@@ -22,6 +22,7 @@ inverse pass (`inverse = true`).  The key differences:
 The `ref_ntt_radix4_q*` decomposition lemmas are abstract over the root, so they apply unchanged
 with the inverse top-level root `ω_top⁻¹`. -/
 
+
 /-- Structural fact: `butterfly4` (any `inverse` flag) leaves position `i` unchanged when `i` is
     none of the four modified butterfly positions.  Generalises `butterfly4_getElem_ne`. -/
 lemma butterfly4_getElem_ne_gen {N : ℕ} (inverse : Bool) (roots a : Vector UInt32 N)
@@ -226,7 +227,7 @@ lemma ntt_sub_input_inv_block_0 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
       -- The two low bits of `4 * b` are zero, so its bit-reversal at width `n - q`
       -- equals the bit-reversal of `b` at width `n - q - 2`.
       have h_bitRev : bitRev (n - q) (4 * b) = bitRev (n - q - 2) b := by
-        rcases k : n - q with (_ | _ | k) <;> simp_all +decide [Nat.pow_succ', Nat.mul_assoc]
+        rcases k : n - q with (_ | _ | k) <;> simp_all [Nat.pow_succ', Nat.mul_assoc]
         lia
       -- Since the indices are the same, the elements at those indices are the same.
       have h_index_eq :
@@ -259,7 +260,7 @@ lemma ntt_sub_input_inv_block_2 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
       unfold ntt_sub_input_inv
       -- The expressions are equal by simplifying exponents.
       have h_exp : n - q = n - (q + 2) + 2 := by omega
-      simp +decide [h_exp]
+      simp [h_exp]
       norm_num [show 4 * b = 2 * (2 * b) by ring, Nat.add_div]
       ring_nf
 
@@ -272,7 +273,7 @@ lemma ntt_sub_input_inv_block_3 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
       have h_bitRev :
           bitRev (n - q) (4 * b + 3) =
           2 ^ (n - q - 1) + 2 ^ (n - q - 2) + bitRev (n - q - 2) b := by
-        rcases n' : n - q with (_ | _ | n') <;> simp_all +decide [Nat.pow_succ']
+        rcases n' : n - q with (_ | _ | n') <;> simp_all [Nat.pow_succ']
         · omega
         · omega
         · norm_num [Nat.add_mod, Nat.add_div, Nat.mul_mod, Nat.mul_div_assoc, Nat.mul_comm]

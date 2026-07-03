@@ -26,6 +26,7 @@ import UniversalHashing.BinConvolution.ConvolutionDefs
 former `SolutionHelpers.lean`.
 -/
 
+
 /-- A root table is correct for an `m`-point NTT when every entry at index `len/2 + j`
     holds the twiddle factor `ω_{len}^j` in the Montgomery domain (multiplied by R),
     where `ω_{len} = primRoot ^ ((mod64 - 1) / len)` is a primitive `len`-th root of unity
@@ -115,14 +116,16 @@ lemma radix2Pass_preserves {n : ℕ} (k i : ℕ)
   · induction k generalizing i a with
     | zero => rfl
     | succ k ih =>
-      unfold radix2Pass
-      grind
+      simp only [radix2Pass]
+      rw [ih (i + 1) _ (by omega)]
+      split_ifs <;> first | rfl | (rw [Vector.getElem_set_ne, Vector.getElem_set_ne] <;> omega)
   · -- By induction on $k$: elements outside the range $[2i, 2(i+k)-1]$ remain unchanged.
     induction k generalizing i a idx with
     | zero => rfl
     | succ k ih =>
-      unfold radix2Pass; simp +decide [*]
-      grind
+      simp only [radix2Pass]
+      rw [ih (i + 1) _ idx hidx (by omega)]
+      split_ifs <;> first | rfl | (rw [Vector.getElem_set_ne, Vector.getElem_set_ne] <;> omega)
 
 /-
 Correctness of `radix2Pass`: after processing `n/2` pairs starting from index 0,
@@ -146,7 +149,7 @@ lemma radix2Pass_get_lo {n : ℕ} (k i : ℕ)
     · by_cases hpi' : i = p
       · unfold radix2Pass
         rw [radix2Pass_preserves]
-        · split_ifs <;> simp_all +decide [Vector.get]
+        · split_ifs <;> simp_all [Vector.get]
         · omega
       · specialize ih (i + 1)
             (if h1 : 2 * i < n then
@@ -159,8 +162,8 @@ lemma radix2Pass_get_lo {n : ℕ} (k i : ℕ)
                       (a.get ⟨2 * i + 1, h2⟩)) h2
                 else a else a)
             p hp (by omega) (by omega) (by omega)
-        simp_all +decide [radix2Pass]
-        simp +decide [Vector.get, Vector.set]
+        simp_all [radix2Pass]
+        simp [Vector.get, Vector.set]
         grind
     · omega
 
@@ -180,13 +183,13 @@ lemma radix2Pass_get_hi {n : ℕ} (k i : ℕ)
     · rw [radix2Pass]
       split_ifs <;> simp_all only []
       · rw [radix2Pass_preserves]
-        · simp +decide [Vector.get]
+        · simp [Vector.get]
         · omega
       · omega
       · omega
     · unfold radix2Pass; simp only [*]
       convert ih (i + 1) _ _ _ _ using 1
-      · split_ifs <;> simp_all +decide [Vector.get]
+      · split_ifs <;> simp_all [Vector.get]
         grind
       · exact Nat.succ_le_of_lt (lt_of_le_of_ne hpi (Ne.symm h))
       · all_goals omega
@@ -580,7 +583,7 @@ private lemma butterfly4_forward_ZMod_pos0 {N : ℕ}
             · omega
           · convert ntt_roots_correct_at roots hroots (2 * len) j2 (len + j2) _ _ _ _ using 1
             any_goals omega
-            simp +decide
+            simp
         rw [h_root_values.1, h_root_values.2, MONT_R1_ZMod]
         simp only [mul_assoc, mul_inv_cancel₀ two_pow32_ne_zero_ZMod, mul_one,
           mul_comm ((2 : ZMod mod32.toNat) ^ 32) _]
@@ -649,7 +652,7 @@ private lemma butterfly4_forward_ZMod_pos2 {N : ℕ}
               · omega
             · convert ntt_roots_correct_at roots hroots (2 * len) j2 (len + j2) _ _ _ _ using 1
               any_goals omega
-              simp +decide
+              simp
         rw [h_root_values.1, h_root_values.2, MONT_R1_ZMod]
         simp only [mul_assoc, mul_inv_cancel₀ two_pow32_ne_zero_ZMod, mul_one,
           mul_comm ((2 : ZMod mod32.toNat) ^ 32) _]
@@ -720,7 +723,7 @@ private lemma butterfly4_forward_ZMod_pos1 {N : ℕ}
           · convert ntt_roots_correct_at roots hroots (2 * len) (s + j2)
                   (len + j2 + s) _ _ _ _ using 1
             any_goals omega
-            simp +decide [add_comm, add_left_comm]
+            simp [add_comm, add_left_comm]
         rw [h_root_values.1, h_root_values.2, MONT_R1_ZMod]
         simp only [mul_assoc, mul_inv_cancel₀ two_pow32_ne_zero_ZMod, mul_one,
           mul_comm ((2 : ZMod mod32.toNat) ^ 32) _]
@@ -789,7 +792,7 @@ private lemma butterfly4_forward_ZMod_pos3 {N : ℕ}
           · convert ntt_roots_correct_at roots hroots (2 * len) (s + j2)
                   (len + j2 + s) _ _ _ _ using 1
             any_goals omega
-            simp +decide [add_comm, add_left_comm]
+            simp [add_comm, add_left_comm]
         rw [h_root_values.1, h_root_values.2, MONT_R1_ZMod]
         simp only [mul_assoc, mul_inv_cancel₀ two_pow32_ne_zero_ZMod, mul_one,
           mul_comm ((2 : ZMod mod32.toNat) ^ 32) _]

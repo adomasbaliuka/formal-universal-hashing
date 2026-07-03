@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
 import Mathlib
+import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
 import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
@@ -14,7 +15,6 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForwar
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersPreproc
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvFull
 import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvPreproc
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
 
 /-! Correctness proofs for the NTT-based binary convolution pipeline. -/
 
@@ -762,9 +762,10 @@ theorem dft_convolution_theorem (m : ℕ) (hm : 1 < m)
         exact (by rw [← h_eq, Nat.mod_eq_of_lt (Fin.is_lt l)])
       · intro h
         have h_mod : (i.val + l.val + k.val * (m - 1)) % m = 0 := by
-          simp [← ZMod.val_natCast, h]
-          simp [Nat.cast_sub (hm.le : 1 ≤ m),
-            Nat.cast_sub (by linarith [Fin.is_lt i, Fin.is_lt k] : (i : ℕ) ≤ k + m)]
+          simp only [h, ← ZMod.val_natCast, Nat.cast_add, Nat.cast_mul, ZMod.val_eq_zero]
+          simp only [Nat.cast_sub (by linarith [Fin.is_lt i, Fin.is_lt k] : (i : ℕ) ≤ k + m),
+            Nat.cast_add, CharP.cast_eq_zero, add_zero, Nat.cast_sub (hm.le : 1 ≤ m),
+            Nat.cast_one, zero_sub, mul_neg, mul_one]
           ring_nf
           cases m <;> aesop
         exact h_mod
@@ -1006,13 +1007,13 @@ theorem bool_sum_eq_int_parity {n : ℕ} (a b : BitVec n) (i : Fin n) :
   rw [Finset.sum_filter]
   rw [Finset.sum_filter, Finset.sum_nat_mod]
   induction (Finset.univ : Finset (Fin n)) using Finset.induction with
-  | empty => simp_all +decide
+  | empty => rfl
   | insert j fs _ ih =>
-    simp_all +decide [Finset.sum_insert]
-    cases a[↑j] <;> cases b[↑(i - j)] <;> simp +decide [*]
+    simp_all only [not_false_eq_true, Finset.sum_insert, Nat.mod_add_mod]
+    cases a[↑j] <;> cases b[↑(i - j)] <;> simp +decide only [↓reduceIte, zero_add, add_eq_right]
     cases Nat.mod_two_eq_zero_or_one
         (∑ x ∈ fs, (if b[↑(i - x)] = true then if a[↑x] = true then 1 else 0 else 0) % 2) <;>
-      simp +decide [*, Nat.add_mod]
+      simp only [Nat.add_mod, Nat.mod_succ, dvd_refl, Nat.mod_mod_of_dvd]
     · aesop
     · simp_all +decide only [Fin.getElem_fin, BEq.rfl, Nat.mod_succ, Nat.reduceAdd, Nat.mod_self,
         Nat.reduceBEq]
@@ -1026,11 +1027,18 @@ theorem uint32_sum_bit0 (u v : UInt32) :
   cases Nat.mod_two_eq_zero_or_one (u.toNat + v.toNat) <;>
     simp only [Nat.add_mod, dvd_refl, Nat.mod_mod_of_dvd, Nat.reduceBEq,
       beq_eq_false_iff_ne, ne_eq, BEq.rfl, beq_iff_eq, *] at *
-  · exact ne_of_apply_ne (fun x => x.toNat) (by simp [*, Nat.add_mod] ; omega)
+  · exact ne_of_apply_ne (fun x => x.toNat) (by
+      simp only [UInt32.toNat_and, UInt32.toNat_add, Nat.reducePow, Nat.add_mod,
+        UInt32.toNat_mod_size, UInt32.reduceToNat, Nat.and_one_is_mod, Nat.reduceDvd,
+        Nat.mod_mod_of_dvd, dvd_refl, ne_eq, Nat.mod_two_not_eq_one] ; omega)
   · cases Nat.mod_two_eq_zero_or_one u.toNat <;>
       cases Nat.mod_two_eq_zero_or_one v.toNat <;> simp_all +decide only []
-    · rw [← UInt32.toNat_inj] ; simp [*, Nat.add_mod]
-    · simp_all [← UInt32.toNat_inj, Nat.add_mod]
+    · rw [← UInt32.toNat_inj]
+      simp only [UInt32.toNat_and, UInt32.toNat_add, UInt32.reduceToNat, Nat.and_one_is_mod]
+      omega
+    · simp_all only [← UInt32.toNat_inj, UInt32.toNat_and, UInt32.toNat_add, Nat.reducePow,
+        Nat.add_mod, UInt32.toNat_mod_size, UInt32.reduceToNat, Nat.and_one_is_mod, Nat.reduceDvd,
+        Nat.mod_mod_of_dvd, add_zero, Nat.mod_succ]
 
 /-- Correctness theorem for NTT-based implementation. -/
 theorem circular_convolution_gf2_correct' {n : ℕ} (a b : BitVec n)
