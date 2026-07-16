@@ -8,9 +8,7 @@ import Mathlib.Data.Nat.Prime.Defs
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.ZMod.Defs
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-import PrimeCert.Pocklington3
-import PrimeCert.PowMod
-import PrimeCert.SmallPrimes
+import PrimeCert
 import UniversalHashing.BinConvolution.ConvolutionDefs
 
 /-!
@@ -340,7 +338,8 @@ theorem to_mont_correct (a : UInt32) (ha : a.toNat < mod32.toNat) :
     (toMont a).toNat * 2 ^ 32 % mod32.toNat =
       a.toNat * (2 ^ 64 % mod32.toNat) % mod32.toNat := by
   convert mont_mul_correct a montR2 _ _ using 1
+  · rfl
+  · rw [show montR2.toNat = 2 ^ 64 % mod32.toNat from by decide]
+    rfl
   · assumption
   · decide
-
-

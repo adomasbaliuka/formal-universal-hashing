@@ -44,7 +44,8 @@ lemma rootsInner_preserves_bound {n : ℕ} (wm : UInt32) (halfLen : ℕ)
       split_ifs with hjk
       · apply mont_mul_lt_of_left
         have := hv (halfLen + i) hs
-        simpa using this
+        exact show v[halfLen + i].toNat < mod32.toNat from
+          UInt32.lt_iff_toNat_lt.mp (by simpa using this)
       · have := hv j hj
         simpa using this
     · exact hv
@@ -300,7 +301,7 @@ lemma ntt_sub_input_block_0 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
       have h_bitRev : bitRev (n - q) (4 * b) = bitRev (n - q - 2) b := by
         rcases k : n - q with (_ | _ | k) <;>
           simp_all [Nat.pow_succ', Nat.mul_assoc]
-        lia
+        grind
       -- Since the indices are the same, the elements at those indices are the same.
       have h_index_eq :
           2 ^ (n - q) * j.val + bitRev (n - q) (4 * b) =

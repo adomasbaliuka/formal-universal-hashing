@@ -75,6 +75,7 @@ theorem generalLinearHashFamily.universal2 {a : Nat} (alep : a ≤ p) :
     (generalLinearHashFamily p a).universal2 := by
   intro x y hxy
   convert linearHashFamily.universal2 p (show (x : ZMod p) ≠ y from ?_) using 1
+  · rfl
   simp_all only [ne_eq, Fin.ext_iff, ZMod.natCast_eq_natCast_iff']
   rw [Nat.mod_eq_of_lt, Nat.mod_eq_of_lt] <;> contrapose! hxy
     <;> linarith [Fin.is_lt x, Fin.is_lt y]

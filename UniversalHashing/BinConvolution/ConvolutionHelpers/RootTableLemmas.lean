@@ -265,8 +265,9 @@ lemma powmodAux_correct (mod_ : UInt64) (f : ℕ) (b e r : UInt64)
           · omega
       · -- By definition of modulo, the result of any number modulo mod_ is always less than mod_.
         have h_mod : ∀ (n : UInt64), (n % mod_).toNat < mod_.toNat := by
-          intro n; exact (by
-          convert Nat.mod_lt _ (pos_of_gt hmod) using 1)
+          intro n
+          rw [UInt64.toNat_mod]
+          exact Nat.mod_lt _ (pos_of_gt hmod)
         exact h_mod _
       · simp only [UInt64.toNat_mod, UInt64.toNat_mul, Nat.reducePow]
         exact Nat.mod_lt _ (by linarith)
@@ -288,6 +289,7 @@ lemma powmodAux_correct (mod_ : UInt64) (f : ℕ) (b e r : UInt64)
       · exact Nat.mod_lt _ (by positivity)
       · assumption
       · convert Nat.div_lt_of_lt_mul <| show e.toNat < 2 * 2 ^ f from hf using 1
+        simp [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow]
 
 /-
 `powModU64 base exp mod_` correctly computes `base^exp % mod_` when mod_ ≤ 2^32.
@@ -402,6 +404,7 @@ lemma ensure_roots_base_case (n : ℕ) (hN : 0 < n)
 lemma to_mont_mont_r1 (a : UInt32) (ha : a.toNat < mod32.toNat) :
     (toMont a).toNat = (a.toNat * montR1.toNat) % mod32.toNat := by
   convert mont_mul_eq_nat a montR2 ha (by decide) using 1
+  · rfl
   generalize_proofs at *
   unfold montMulNat; norm_num [MONT_PPRIME_spec, MONT_R2_spec, MONT_R1_spec] 
   norm_num [show mod64.toNat = 3 * 2 ^ 30 + 1 by rfl, show montPprime.toNat = 3221225471 by rfl]

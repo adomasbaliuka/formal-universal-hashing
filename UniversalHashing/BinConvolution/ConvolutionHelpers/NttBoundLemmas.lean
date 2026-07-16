@@ -162,7 +162,8 @@ theorem vector_all_lt_set {n : ℕ} (v : Vector UInt32 n) (i : ℕ) (h : i < n)
 theorem vector_all_lt_getElem {n : ℕ} (v : Vector UInt32 n) (j : Fin n)
     (hv : v.all (· < mod32)) : (v.get j).toNat < mod32.toNat :=
   UInt32.lt_iff_toNat_lt.mp
-    (by simpa [decide_eq_true_eq] using (Vector.all_eq_true.mp hv) j.val j.isLt)
+    (show v[(j : Nat)]'j.isLt < mod32 by
+      simpa [decide_eq_true_eq] using (Vector.all_eq_true.mp hv) j.val j.isLt)
 
 /-  Helper: `radix2Pass` applies `addMod32`/`subMod32` in-place and preserves the bound. -/
 theorem radix2Pass_bound {n : ℕ} (k i : ℕ) (v : Vector UInt32 n)
@@ -203,7 +204,8 @@ theorem vector_get_lt_of_all {n : ℕ} (v : Vector UInt32 n)
     (idx : ℕ) (hv : v.all (· < mod32)) :
     (if h' : idx < n then v.get ⟨idx, h'⟩ else 0).toNat < mod32.toNat := by
   split_ifs with h'
-  · exact UInt32.lt_iff_toNat_lt.mp (by simpa using (Vector.all_eq_true.mp hv) _ h')
+  · exact UInt32.lt_iff_toNat_lt.mp
+      (show v[idx]'h' < mod32 by simpa using (Vector.all_eq_true.mp hv) _ h')
   · exact by decide
 
 theorem butterfly4_bound {n : ℕ}
@@ -264,16 +266,10 @@ theorem radix4Inner_bound {n : ℕ}
 theorem radix4Middle_bound {n : ℕ} (inverse : Bool) (roots : Vector UInt32 n)
     (s len : ℕ) (k b : ℕ) (v : Vector UInt32 n) (hv : v.all (· < mod32)) :
     (radix4Middle inverse roots s len k b v).all (· < mod32) := by
-      convert hv using 1
       induction k generalizing b v with
-      | zero => rfl
+      | zero => exact hv
       | succ k ih =>
-        convert ih (b + 1) _ _ using 1
-        · rw [radix4Inner_bound inverse roots s len
-            (b * 2 * len) s 0 v hv]
-          exact hv
-        · convert radix4Inner_bound inverse roots s len
-            (b * 2 * len) s 0 v hv using 1
+        exact ih (b + 1) _ (radix4Inner_bound inverse roots s len (b * 2 * len) s 0 v hv)
 
 /-- All outputs of nttInplace are < mod32. -/
 theorem ntt_inplace_output_bound {m : ℕ}

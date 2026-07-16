@@ -6,7 +6,7 @@ Authors: Adomas Baliuka
 import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Data.Real.StarOrdered
+import Mathlib.Algebra.Order.Star.Real
 
 /-!
 # Utility lemmas

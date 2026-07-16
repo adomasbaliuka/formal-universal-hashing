@@ -94,7 +94,7 @@ theorem HashFamily.universal2_iff_probUniform (H : HashFamily Seed Input Output)
   constructor <;> intro h x y hxy
   · have h_div : (Fintype.card {i : Seed // H i x = H i y}) * Fintype.card Output
         ≤ Fintype.card Seed := by
-      convert h hxy using 1
+      exact_mod_cast h hxy
     by_cases hOutput : Fintype.card Output = 0 <;> by_cases hSeed : Fintype.card Seed = 0
     · simp_all
     · simp_all only [mul_zero, zero_le, Fintype.card_eq_zero_iff, not_isEmpty_iff,
@@ -268,7 +268,7 @@ theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
       = (Fintype.card {s : Seed | H s x = H s y}) := by
     intro x y hxy
     exact Fintype.card_congr (Equiv.ofBijective (fun s ↦ ⟨f s, by aesop⟩) ⟨
-        fun a b h ↦ by have := hf.1 ( by aesop : f a = f b ) ; aesop,
+        fun a b h ↦ by have := hf.1 (congrArg Subtype.val h) ; aesop,
         fun a ↦ by obtain ⟨s, hs⟩ := hf.2 a; aesop⟩)
   constructor <;> intro h x y hxy <;> have := h hxy
     <;> simp_all only [Multiset.bijective_iff_map_univ_eq_univ, ne_eq, Function.comp_apply,

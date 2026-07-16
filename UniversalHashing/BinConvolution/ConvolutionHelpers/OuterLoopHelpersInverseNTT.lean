@@ -228,7 +228,7 @@ lemma ntt_sub_input_inv_block_0 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
       -- equals the bit-reversal of `b` at width `n - q - 2`.
       have h_bitRev : bitRev (n - q) (4 * b) = bitRev (n - q - 2) b := by
         rcases k : n - q with (_ | _ | k) <;> simp_all [Nat.pow_succ', Nat.mul_assoc]
-        lia
+        grind
       -- Since the indices are the same, the elements at those indices are the same.
       have h_index_eq :
           2 ^ (n - q) * j.val + bitRev (n - q) (4 * b) =

@@ -167,7 +167,7 @@ theorem matHash_universal2 (p : ℕ) [Fact p.Prime] (a b : ℕ) :
     exact card_ker_pow_dim a hv_ne_zero
   rcases b with (_ | b)
   · simp_all only [ne_eq, Matrix.empty_sub_empty, Matrix.zero_empty, not_true_eq_false, v]
-  · convert mul_le_mul_of_nonneg_right h_card_ker.le (pow_nonneg (show 0 ≤ p by omega) a) using 1
+  · convert Nat.mul_le_mul_right (p ^ a) h_card_ker.le using 1
     · have hset : {s : Matrix (Fin a) (Fin (b + 1)) (ZMod p) | s.mulVec x = s.mulVec y}
           = {M | M.mulVec v = 0} := by
         ext M

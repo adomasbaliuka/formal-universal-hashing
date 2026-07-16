@@ -608,7 +608,10 @@ theorem omega_is_prim_root {m : ℕ}
     (hm_dvd : m ∣ mod64.toNat - 1) :
     IsPrimitiveRoot ((primRoot.toNat : ZMod mod32.toNat) ^ ((mod64.toNat - 1) / m)) m := by
   obtain ⟨k, hk⟩ := hm_dvd
-  convert IsPrimitiveRoot.pow_of_dvd (prim_root_PRIM_ROOT) _ _ using 1
+  have hroot : IsPrimitiveRoot (primRoot.toNat : ZMod mod32.toNat) (mod64.toNat - 1) := by
+    have h := prim_root_PRIM_ROOT
+    rwa [mod32_eq_mod] at h
+  convert IsPrimitiveRoot.pow_of_dvd hroot _ _ using 1
   · -- order matches: `m = (p-1) / ((p-1)/m)`
     rw [Nat.div_div_self] <;> norm_num [hk]
     exact ⟨by rintro rfl; simp only [Nat.zero_mul] at hk; exact absurd hk (by decide),
@@ -664,7 +667,8 @@ theorem mont_mul_zmod (a b : UInt32)
   have h_mod : (montMul a b).toNat * 2 ^ 32 ≡ a.toNat * b.toNat [MOD mod32.toNat] := by
     exact mont_mul_correct a b ha hb |>.2
   have h_mod : (montMul a b).toNat * (montR1.toNat : ZMod mod32.toNat) = a.toNat * b.toNat := by
-    simpa [← ZMod.natCast_eq_natCast_iff] using h_mod
+    simpa [← ZMod.natCast_eq_natCast_iff,
+      show montR1.toNat = 2 ^ 32 % mod32.toNat from by decide, ZMod.natCast_mod] using h_mod
   simp only [← h_mod]
   rw [mul_assoc, mul_inv_cancel₀, mul_one]
   · exact Eq.symm (ZMod.val_cast_of_lt (mont_mul_correct a b ha hb |>.1))
@@ -871,9 +875,10 @@ theorem ntt_pipeline_computes_circ_conv {m : ℕ}
       rw [Finset.sum_eq_single ⟨0, by linarith⟩] <;>
         simp only [tsub_zero, Nat.add_mod_right, Finset.mem_univ, ne_eq,
           mul_eq_zero, forall_const, not_true_eq_false, IsEmpty.forall_iff]
-      · convert hresult_conv using 1
+      · simp only [Fin.getElem_fin] at hresult_conv
+        convert hresult_conv using 1
         rw [Finset.sum_eq_single ⟨0, by linarith⟩] <;>
-          simp only [hm, Nat.cast_one, inv_one, Fin.getElem_fin, mul_zero, pow_zero,
+          simp only [hm, Nat.cast_one, inv_one, mul_zero, pow_zero,
             mul_one, zero_mul, one_mul, Finset.mem_univ, ne_eq, inv_pow, mul_eq_zero,
             inv_eq_zero, pow_eq_zero_iff', not_or, forall_const, not_true_eq_false,
             IsEmpty.forall_iff]
@@ -913,8 +918,7 @@ theorem vec_circ_conv_lt_mod {n m : ℕ}
     vec_circ_conv fa fb k < mod32.toNat := by
   refine lt_of_le_of_lt
     (Finset.sum_le_sum (g := fun i => if i.val < n then 1 else 0) fun i _ => ?_) ?_
-  · dsimp only []
-    split_ifs with hi
+  · split_ifs with hi
     · exact Nat.mul_le_mul (hfa i |>.1) (hfb _)
     · simp only [(hfa i).2 (Nat.le_of_not_lt hi), Nat.zero_mul, Nat.zero_le]
   · simp only [Finset.sum_boole, Nat.cast_id] at *

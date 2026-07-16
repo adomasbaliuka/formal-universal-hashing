@@ -218,7 +218,8 @@ lemma radix2Pass_ZMod_pair {n : ℕ} (a : Vector UInt32 n)
     · simp_all only [Vector.all_eq_true, decide_eq_true_eq]
       exact ha _ (by linarith)
     · rw [Vector.all_eq_true] at ha
-      simpa using ha _ hp
+      exact show a[2 * p + 1].toNat < mod32.toNat from
+        UInt32.lt_iff_toNat_lt.mp (by simpa using ha _ hp)
   · convert submod32_ZMod _ _ _ _ using 1
     · convert congr_arg (fun x : UInt32 => (x.toNat : ZMod mod32.toNat))
           (radix2Pass_get_hi (n / 2) 0 a p hp (by omega) (by omega) (by omega)) using 1

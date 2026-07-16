@@ -164,6 +164,7 @@ theorem HashFamily.almostUniversal2_of_almostStronglyUniversal2
     convert Finset.sum_le_sum fun b hb =>
       show (Fintype.card {s : Seed // H s x = b ∧ H s y = b} : ℚ)
       ≤ ε * Fintype.card Seed / Fintype.card Output from ?_ using 1
+    · rfl
     · rw [Nat.cast_sum]
     · have : Nonempty Output := Nonempty.intro (H (‹Nonempty Seed›.some) x)
       simp [Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
@@ -172,6 +173,7 @@ theorem HashFamily.almostUniversal2_of_almostStronglyUniversal2
       rw [probUniform, div_le_iff₀ (Nat.cast_pos.mpr <| Fintype.card_pos)] at this
       rwa [div_mul_eq_mul_div] at this
   convert div_le_div_of_nonneg_right h_sum (Nat.cast_nonneg (Fintype.card Seed)) using 1
+  · rfl
   · simp only [probUniform, Fintype.card_subtype, Nat.cast_sum, Finset.card_filter]
     rw_mod_cast [← Finset.sum_comm]
     congr! 2
