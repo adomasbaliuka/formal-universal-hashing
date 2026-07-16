@@ -28,8 +28,6 @@ import UniversalHashing.Util
 -/
 
 
-
-
 section StinsonBoundHelpers
 
 variable {Seed Input Output : Type*} [Fintype Seed] [Fintype Input] [Fintype Output]
@@ -163,7 +161,7 @@ private theorem sum_coincidence_mul_pred_le
         rw [Finset.sum_comm]
         simp only [univ_product_univ, sum_boole, Nat.cast_id]
         rw [Finset.sum_congr rfl fun _ _ =>
-          Finset.card_eq_one.mpr ⟨ ( H ‹_› x, H ‹_› y ), by aesop ⟩]
+          Finset.card_eq_one.mpr ⟨( H ‹_› x, H ‹_› y ), by aesop⟩]
         simp [Finset.card_univ]
       convert congr_arg ( fun x : ℚ => x / Fintype.card Seed ) h_count_total using 1
       · simp [probUniform, Finset.sum_div]
@@ -201,7 +199,9 @@ private theorem sum_coincidence_mul_pred_le
       simp_rw [and_iff_right hxy]
       exact h_prob x y hxy
   convert h_fubini.le.trans h_sum_bound using 1
-  norm_num [Finset.sum_ite, Finset.filter_ne]
+  · rfl
+  · rfl
+  norm_num [Finset.sum_ite, Finset.filter_ne, Finset.filter_ne']
   ring_nf!
   rw [Nat.cast_pred Fintype.card_pos]
   ring
@@ -243,7 +243,7 @@ from a product index to an iterated double sum. -/
 private lemma double_sum_cauchy_schwarz {α : Type*} [Fintype α] (u v : α → α → ℝ) :
     (∑ s : α, ∑ t : α, u s t * v s t) ^ 2 ≤
     (∑ s : α, ∑ t : α, u s t ^ 2) * (∑ s : α, ∑ t : α, v s t ^ 2) := by
-  simpa only [← Finset.sum_product'] using
+  simpa only [← Finset.sum_product', Finset.univ_product_univ] using
     Finset.sum_mul_sq_le_sq_mul_sq Finset.univ
       (fun p : α × α => u p.1 p.2) (fun p : α × α => v p.1 p.2)
 
@@ -299,18 +299,21 @@ private theorem helper_ineq_of_almostStronglyUniversal2
       ∑ s : Seed, ∑ t : Seed, (C s t : ℚ) * ((C s t : ℚ) - 1) +
       ∑ s : Seed, ∑ t : Seed, (C s t : ℚ) := by
     simp only [sq, mul_sub, mul_one, Finset.sum_sub_distrib, sub_add_cancel]
-  convert h_cauchy_schwarz.trans _ using 1 <;>
-    norm_num [h_sum_C, h_sum_C_diag, h_sum_C_diag_sq, h_sum_C_sq_def]
-  · ring
-  convert mul_le_mul_of_nonneg_left
-      ( add_le_add_right h_sum_C_sq
-        ( ( Fintype.card Input : ℚ ) * ( Fintype.card Seed : ℚ ) *
-          ( ( Fintype.card Seed : ℚ ) / ( Fintype.card Output : ℚ ) - 1 ) -
-          ( Fintype.card Seed : ℚ ) *
-            ( ( Fintype.card Input : ℚ ) * ( ( Fintype.card Input : ℚ ) - 1 ) ) ) )
-      ( show ( 0 : ℚ ) ≤ ( Fintype.card Seed : ℚ ) * ( Fintype.card Seed - 1 ) by
-        exact mul_nonneg ( Nat.cast_nonneg _ )
-          (sub_nonneg.mpr (Nat.one_le_cast.mpr Fintype.card_pos))) using 1 <;> ring
+  convert h_cauchy_schwarz.trans _ using 1
+  · rfl
+  · norm_num [h_sum_C, h_sum_C_diag, h_sum_C_diag_sq, h_sum_C_sq_def]
+    ring
+  · norm_num [h_sum_C, h_sum_C_diag, h_sum_C_diag_sq, h_sum_C_sq_def]
+    convert mul_le_mul_of_nonneg_left
+        ( add_le_add_right h_sum_C_sq
+          ( ( Fintype.card Input : ℚ ) * ( Fintype.card Seed : ℚ ) *
+            ( ( Fintype.card Seed : ℚ ) / ( Fintype.card Output : ℚ ) - 1 ) -
+            ( Fintype.card Seed : ℚ ) *
+              ( ( Fintype.card Input : ℚ ) * ( ( Fintype.card Input : ℚ ) - 1 ) ) ) )
+        ( show ( 0 : ℚ ) ≤ ( Fintype.card Seed : ℚ ) * ( Fintype.card Seed - 1 ) by
+          exact mul_nonneg ( Nat.cast_nonneg _ )
+            (sub_nonneg.mpr (Nat.one_le_cast.mpr Fintype.card_pos))) using 1 <;>
+      first | rfl | ring
 
 
 /--
@@ -396,7 +399,7 @@ theorem HashFamily.card_seed_lb_of_stronglyUniversal2
   by_cases hO2 : 2 ≤ Fintype.card Output
   · have hOpos : (Fintype.card Output : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
     have hO1pos : (Fintype.card Output : ℚ) - 1 ≠ 0 := by
-      linarith [show (2 : ℚ) ≤ Fintype.card Output from by exact_mod_cast hO2]
+      exact sub_ne_zero_of_ne (by exact_mod_cast (by omega : Fintype.card Output ≠ 1))
     have hdenom : Fintype.card Output * (1 / (Fintype.card Output : ℚ)) *
         ((Fintype.card Input : ℚ) - 1) + Fintype.card Output - Fintype.card Input =
         Fintype.card Output - 1 := by
@@ -477,12 +480,14 @@ theorem HashFamily.exists_collision_lb
       εN * (Fintype.card Input - 1) * (Fintype.card Seed) := by
     convert Finset.sum_lt_sum_of_nonempty (Finset.card_pos.mp <| ?_) (h_per_pair x) using 1 <;>
         norm_num [Finset.card_erase_of_mem (Finset.mem_univ x)]
+    · rfl
     · rw [Nat.cast_sub ( by linarith )] ; ring
     · linarith
   have h_sum_lt :
       ∑ x : Input, ∑ y ∈ Finset.univ.erase x, (c x y : ℚ) <
       εN * (Fintype.card Input * (Fintype.card Input - 1)) * (Fintype.card Seed) := by
     convert Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun x _ => h_per_x x using 1
+    · rfl
     · norm_num; ring
   have h_cauchy_schwarz_sum :
       ∑ s : Seed, ∑ a : Output, (Fintype.card {x : Input | H s x = a} : ℚ)^2 ≥
@@ -547,7 +552,7 @@ theorem HashFamily.almostUniversal2_comp
     split_ifs with h
     · simp_all only [almostUniversal2, ne_eq, Fintype.card_subtype_true]
       exact div_self_le_one _
-    · convert h₂ h using 1
+    · exact_mod_cast h₂ h
   have h_composition :
       (Fintype.card {s : Seed₁ × Seed₂ // H₂ s.2 (H₁ s.1 x) = H₂ s.2 (H₁ s.1 y)}) /
       (Fintype.card (Seed₁ × Seed₂) : ℚ) ≤
@@ -563,3 +568,5 @@ theorem HashFamily.almostUniversal2_comp
   convert h_composition.trans (add_le_add (h₁ hxy)
       (mul_le_of_le_one_left hε₂
       (div_le_one_of_le₀ (mod_cast Fintype.card_subtype_le _) (Nat.cast_nonneg _)))) using 1
+  · rfl
+  · rfl

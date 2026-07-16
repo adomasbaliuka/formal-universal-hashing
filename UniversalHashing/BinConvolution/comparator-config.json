@@ -1,0 +1,7 @@
+{
+    "challenge_module": "UniversalHashing.BinConvolution.ConvolutionChallenge",
+    "solution_module": "UniversalHashing.BinConvolution.ConvolutionSolution",
+    "theorem_names": ["circular_convolution_gf2_correct"],
+    "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+    "enable_nanoda": false
+}
