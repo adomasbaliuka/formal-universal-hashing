@@ -3,16 +3,19 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Algebra.Lie.OfAssociative
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Algebra.Polynomial.AlgebraMap
-import Mathlib.Algebra.Polynomial.BigOperators
-import Mathlib.Order.Interval.Finset.Defs
-import Mathlib.Analysis.Normed.Ring.Lemmas
-import Mathlib.LinearAlgebra.Basis.VectorSpace
+module
 
-import UniversalHashing.Basic
-import UniversalHashing.ToeplitzGeneral
+public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Algebra.Order.Ring.Star
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Order.Interval.Finset.Defs
+public import Mathlib.Analysis.Normed.Ring.Lemmas
+public import Mathlib.LinearAlgebra.Basis.VectorSpace
+
+public import UniversalHashing.Basic
+public import UniversalHashing.ToeplitzGeneral
+
 
 /-!
 This module defines a universal-2 hash by vector matrix multiplication with Toeplitz matrices.
@@ -22,6 +25,8 @@ Toeplitz matrices are defined in `ToeplitzGeneral.lean`.
 Main result: `binToeplitz_mulVec_isUniversal2` shows that matrix-vector multiplication
 with (binary) Toeplitz matrices is universal-2.
 -/
+
+@[expose] public section
 
 
 open scoped Nat
@@ -108,3 +113,5 @@ example : ¬ (toeplitzHash 2 1).stronglyUniversal2 := by
   refine Nat.ne_rat_ge1_of_lt1 ?_ (1/4) ?_ ?_
   · decide
   · norm_num
+
+end

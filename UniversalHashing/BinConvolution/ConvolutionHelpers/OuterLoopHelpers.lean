@@ -3,14 +3,19 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+module
+
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+
 
 
 /-!
 # Helper lemmas for `ntt_outerLoop_computes_ref_ntt`
 -/
+
+@[expose] public section
 
 
 /-- ℕ-variant: if `m = 2^n` and `m ∣ mod64.toNat - 1`, then `n < 64`. -/
@@ -535,3 +540,5 @@ lemma radix4_block_ne_pos (q b j2 j2nat : ℕ)
   have hpow_e : 2 ^ (q + 2) = 2 ^ q + 2 ^ q + 2 ^ q + 2 ^ q := by ring
   have hpow1 : 2 ^ (q + 1) = 2 ^ q + 2 ^ q := by ring
   rcases hpos with h | h | h | h <;> subst h <;> refine ⟨?_, ?_, ?_, ?_⟩ <;> omega
+
+end

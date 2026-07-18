@@ -3,17 +3,22 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Tactic.IntervalCases
-import Mathlib.Tactic.NormNum.Ineq
-import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
-import UniversalHashing.BinConvolution.ConvolutionDefs
+module
+
+public import Mathlib.Algebra.Group.Nat.Defs
+public import Mathlib.Algebra.Order.Ring.Star
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Tactic.IntervalCases
+public import Mathlib.Tactic.NormNum.Ineq
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+public import UniversalHashing.BinConvolution.ConvolutionDefs
+
 
 /-!
 #  ── Root table
 -/
+
+@[expose] public section
 
 
 /-
@@ -224,86 +229,6 @@ lemma outer_preserves_target (n : ℕ) (hN : 0 < n)
           Vector.getElem_set,
           show (0 : ℕ) ≠ 2 ^ K + j from by omega, if_false]
 
-/-
-`powModAuxU64` correctly computes `r * b^e % mod_` when `b < mod_` and `r < mod_`
-    and `mod_` is small enough to avoid UInt64 overflow (mod_ ≤ 2^32).
--/
-lemma powmodAux_correct (mod_ : UInt64) (f : ℕ) (b e r : UInt64)
-    (hmod : 1 < mod_.toNat) (hmod_small : mod_.toNat ≤ 2 ^ 32)
-    (hb : b.toNat < mod_.toNat) (hr : r.toNat < mod_.toNat)
-    (hf : e.toNat < 2 ^ f) :
-    (powModAuxU64 mod_ f b e r).toNat = (r.toNat * b.toNat ^ e.toNat) % mod_.toNat := by
-  induction f generalizing b e r with
-  | zero =>
-    simp_all only [powModAuxU64, Nat.lt_one_iff, pow_zero, mul_one]
-    rw [Nat.mod_eq_of_lt hr]
-  | succ f ih =>
-    unfold powModAuxU64
-    norm_num at hmod_small
-    simp only [beq_iff_eq, bne_iff_ne, pow_succ'] at *
-    split_ifs
-    · simp_all only [pow_zero, mul_one, Nat.mod_eq_of_lt hr, UInt64.toNat_zero]
-    · rw [ih]
-      · rw [show e.toNat = 2 * (e >>> 1 |> UInt64.toNat) + 1 from ?_]
-        · norm_num [
-              ← ZMod.natCast_eq_natCast_iff',
-              Nat.mod_eq_of_lt (by linarith : b.toNat < 18446744073709551616),
-              Nat.mod_eq_of_lt (by linarith : r.toNat < 18446744073709551616)]
-          ring_nf
-          norm_num [pow_mul', ← ZMod.natCast_eq_natCast_iff']
-          norm_num [
-            Nat.mod_eq_of_lt ((by nlinarith : r.toNat * b.toNat < 18446744073709551616)),
-            Nat.mod_eq_of_lt ((by nlinarith : b.toNat ^ 2 < 18446744073709551616))]
-        · cases Nat.mod_two_eq_zero_or_one e.toNat <;>
-              simp only [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow,
-                         (by decide : (1 : UInt64).toNat % 64 = 1)] at *
-          · cases e ; simp_all only [UInt64.toNat_ofBitVec]
-            rename_i k hk₁ hk₂ hk₃
-            contrapose! hk₂
-            ext
-            simp [hk₃]
-          · omega
-      · -- By definition of modulo, the result of any number modulo mod_ is always less than mod_.
-        have h_mod : ∀ (n : UInt64), (n % mod_).toNat < mod_.toNat := by
-          intro n
-          rw [UInt64.toNat_mod]
-          exact Nat.mod_lt _ (pos_of_gt hmod)
-        exact h_mod _
-      · simp only [UInt64.toNat_mod, UInt64.toNat_mul, Nat.reducePow]
-        exact Nat.mod_lt _ (by linarith)
-      · simp only [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow,
-                   (by decide : (1 : UInt64).toNat % 64 = 1), pow_one]
-        omega
-    · simp only [not_ne_iff] at *
-      convert ih (b * b % mod_) (e >>> 1) r _ _ _ using 1
-      · rw [show e.toNat = 2 * (e.toNat / 2) by
-              rw [Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero _)]
-              rw [← Nat.even_iff]
-              rw [Nat.even_iff] 
-              replace := congr_arg (fun x : UInt64 => x.toNat) ‹e &&& 1 = 0› 
-              norm_num [Nat.and_comm] at this ⊢ ; aesop;] ;
-            norm_num [pow_mul, Nat.mul_mod, Nat.pow_mod]
-        norm_num [← Nat.mul_mod, ← Nat.pow_mod]
-        rw [← sq]
-        rw [Nat.mod_eq_of_lt ((by nlinarith : b.toNat ^ 2 < 18446744073709551616))] ; rfl
-      · exact Nat.mod_lt _ (by positivity)
-      · assumption
-      · convert Nat.div_lt_of_lt_mul <| show e.toNat < 2 * 2 ^ f from hf using 1
-        simp [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow]
-
-/-
-`powModU64 base exp mod_` correctly computes `base^exp % mod_` when mod_ ≤ 2^32.
--/
-lemma powmod_correct (base exp mod_ : UInt64)
-    (hmod : 1 < mod_.toNat) (hmod_small : mod_.toNat ≤ 2 ^ 32) :
-    (powModU64 base exp mod_).toNat = base.toNat ^ exp.toNat % mod_.toNat := by
-  unfold powModU64
-  rw [powmodAux_correct]
-  any_goals assumption
-  · simp [← ZMod.natCast_eq_natCast_iff', Nat.cast_pow]
-  · exact Nat.mod_lt _ (pos_of_gt hmod)
-  · exact exp.toNat_lt
-
 /-- `toMont a` computes `a.toNat * montR1.toNat % mod32.toNat` at the Nat level. -/
 lemma to_mont_nat_helper (x a : ℕ) (hx_lt : x < mod32.toNat)
     (h_cong : x * 2 ^ 32 % mod32.toNat = a * (2 ^ 64 % mod32.toNat) % mod32.toNat) :
@@ -495,3 +420,5 @@ theorem ensure_roots_spec (n : ℕ) (k j : ℕ)
   intro hN
   exact ensure_roots_outer_geom n hN k j hk63 hlen_le hj
 
+
+end

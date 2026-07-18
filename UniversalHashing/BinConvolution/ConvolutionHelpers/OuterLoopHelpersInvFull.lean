@@ -3,15 +3,18 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInv
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForward
+module
+
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInv
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForward
+
 
 
 /-!
@@ -19,6 +22,8 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForwar
 
 Mirrors `OuterLoopHelpersForward` for the inverse pass (`inverse = true`).
 -/
+
+@[expose] public section
 
 
 /-- When `outerLoop_inv_inverse` holds at q = n, the array computes the DFT with ω⁻¹. -/
@@ -226,3 +231,5 @@ lemma outerLoop_from_inv_inverse {m : ℕ} (n q : ℕ)
         exact ih (q + 2)
           (radix4Middle true roots (len >>> 1).toNat len.toNat (m / (2 * len.toNat)) 0 a)
           hq2 hinv' (len <<< 2) hlen' heven' (by omega)
+
+end

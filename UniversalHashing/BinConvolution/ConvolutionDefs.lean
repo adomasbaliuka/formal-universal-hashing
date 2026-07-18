@@ -3,16 +3,28 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Batteries.Data.BitVec.Basic
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Algebra.Ring.BooleanRing
-import Mathlib.Analysis.Normed.Ring.Lemmas
-import Mathlib.Data.Int.Star
-import Mathlib.Data.UInt
+module
 
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
+public import Batteries.Data.BitVec.Basic
+meta import Batteries.Data.BitVec.Basic
+public import Mathlib.Algebra.Order.Ring.Star
+meta import Mathlib.Algebra.Order.Ring.Star
+public import Mathlib.Algebra.Ring.BooleanRing
+meta import Mathlib.Algebra.Ring.BooleanRing
+public import Mathlib.Analysis.Normed.Ring.Lemmas
+meta import Mathlib.Analysis.Normed.Ring.Lemmas
+public import Mathlib.Data.Int.Star
+meta import Mathlib.Data.Int.Star
+public import Mathlib.Data.UInt
+meta import Mathlib.Data.UInt
+
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
+meta import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
+
 
 /-! # Definitions for GF(2) circular convolution via NTT -/
+
+@[expose] public section
 
 /-- The NTT-friendly prime modulus `p = 3·2³⁰ + 1 = 3221225473`, as a `UInt64`.
 Its `2³⁰`-smooth factor `p - 1 = 3·2³⁰` provides power-of-two roots of unity for the transform. -/
@@ -296,3 +308,5 @@ set_option linter.hashCommand false
   circularConvolutionGf2 a b == BitVec.circConvolutionBruteforce a b
 
 end Testing
+
+end

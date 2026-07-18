@@ -3,8 +3,11 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
+module
+
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
+
 
 
 /-!
@@ -15,6 +18,8 @@ to keep per-file elaboration memory bounded.  The lightweight inverse infrastruc
 (`outerLoop_inv_inverse`, `ntt_sub_input_inv`, the `_gen` structural lemmas, `twiddle_inv_exp`,
 and the `ntt_sub_input_inv_block_*` lemmas) lives in `OuterLoopHelpers`.
 -/
+
+@[expose] public section
 
 /-- Split a full `radix4Inner` pass at index `j2nat` into: leading `j2nat` steps,
     one butterfly at `j2nat`, then trailing steps. -/
@@ -680,3 +685,5 @@ lemma radix4Inner_single_block_correct_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 �
     hj2u_toNat h_add0 h_add1 h_add2 h_add3
     h_split h_trailing_pos0 h_trailing_pos1 h_trailing_pos2 h_trailing_pos3
     hbf0 hbf1 hbf2 hbf3 h_tau1 h_tau2 h_tau3
+
+end

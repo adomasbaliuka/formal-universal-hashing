@@ -3,8 +3,11 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersRadix4Inner
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
+module
+
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersRadix4Inner
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
+
 
 
 /-!
@@ -13,6 +16,8 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvers
 This file contains the larger forward-pass outer-loop lemmas split out from `OuterLoopHelpers`
 to keep per-file elaboration memory bounded.
 -/
+
+@[expose] public section
 
 lemma radix4Middle_advances_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     (hm_eq : m = 2 ^ n)
@@ -217,3 +222,5 @@ lemma outerLoop_from_inv {m : ℕ} (n q : ℕ)
           (radix4Middle false roots (len >>> 1).toNat len.toNat (m / (2 * len.toNat)) 0 a)
           hq2 hinv' (len <<< 2) hlen' heven' (by omega)
 
+
+end

@@ -3,8 +3,11 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.AlmostUniversal
-import UniversalHashing.Util
+module
+
+public import UniversalHashing.AlmostUniversal
+public import UniversalHashing.Util
+
 /-!
 # Bounds for ε-Almost Universal Hashing
 
@@ -26,6 +29,8 @@ import UniversalHashing.Util
   *[S94, Theorem 5.4]*
 
 -/
+
+@[expose] public section
 
 
 section StinsonBoundHelpers
@@ -570,3 +575,5 @@ theorem HashFamily.almostUniversal2_comp
       (div_le_one_of_le₀ (mod_cast Fintype.card_subtype_le _) (Nat.cast_nonneg _)))) using 1
   · rfl
   · rfl
+
+end

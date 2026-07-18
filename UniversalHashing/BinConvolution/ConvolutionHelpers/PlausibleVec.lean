@@ -3,7 +3,11 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Plausible
+module
+
+public import Plausible
+
+@[expose] public section
 
 open Plausible
 
@@ -27,3 +31,5 @@ instance Fin.arbitraryNat {n : Nat} : Arbitrary (Fin n) where
     else
       throw (GenError.genError "Fin 0 has no elements")
 
+
+end

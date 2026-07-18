@@ -3,16 +3,19 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.Data.Fintype.Card
-import Mathlib.LinearAlgebra.Dimension.Finrank
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.FreeModule.PID
-import Mathlib.LinearAlgebra.Matrix.Defs
-import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
+module
 
-import UniversalHashing.Basic
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.LinearAlgebra.FreeModule.PID
+public import Mathlib.LinearAlgebra.Matrix.Defs
+public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
+
+public import UniversalHashing.Basic
+
 
 /-!
 Proof that Binary Matrix-vector multiplication (using all matrices) is a Universal-2 hash function:
@@ -20,6 +23,8 @@ Proof that Binary Matrix-vector multiplication (using all matrices) is a Univers
 
 (This family is very big and therefore not useful in practice)
 -/
+
+@[expose] public section
 
 section GenericField
 
@@ -212,3 +217,5 @@ theorem matHash_not_strongly_universal_n (a b : ℕ) (ha : a > 0) (hb : b > 0) :
   simp_all
 
 end ZModp
+
+end

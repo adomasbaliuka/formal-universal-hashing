@@ -3,20 +3,24 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Batteries.Data.Vector.Lemmas
-import Mathlib.Algebra.Lie.OfAssociative
-import Mathlib.Algebra.Order.Group.Nat
-import Mathlib.Data.Nat.Cast.Order.Basic
-import Mathlib.Data.Nat.Notation
-import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.Data.ZMod.Defs
-import Mathlib.Tactic.Abel
-import Mathlib.Tactic.Linarith.Frontend
-import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionDefs
+module
+
+public import Batteries.Data.Vector.Lemmas
+public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Algebra.Order.Group.Nat
+public import Mathlib.Data.Nat.Cast.Order.Basic
+public import Mathlib.Data.Nat.Notation
+public import Mathlib.Data.Nat.Prime.Basic
+public import Mathlib.Data.ZMod.Defs
+public import Mathlib.Tactic.Abel
+public import Mathlib.Tactic.Linarith.Frontend
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
+public import UniversalHashing.BinConvolution.ConvolutionDefs
+import all Init.Data.Nat.Power2.Basic
+
 
 /-!
 # Radix-4 forward butterfly
@@ -25,6 +29,8 @@ import UniversalHashing.BinConvolution.ConvolutionDefs
 (`butterfly4_forward_*`) culminating in `butterfly4_forward_ZMod_combined`. Split out of the
 former `SolutionHelpers.lean`.
 -/
+
+@[expose] public section
 
 
 /-- A root table is correct for an `m`-point NTT when every entry at index `len/2 + j`
@@ -854,3 +860,5 @@ lemma butterfly4_forward_ZMod_combined {N : ℕ}
   butterfly4_forward_ZMod_pos3 roots a ha hroots hroots_bnd s len i2 j2 hlen hlen_dvd
     hj2 hbnd0 hbnd1 hbnd2 hbnd3 hN_le⟩
 
+
+end

@@ -3,17 +3,20 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Tactic.Basic
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.Algebra.BigOperators.Field
-import Mathlib.LinearAlgebra.Matrix.Defs
-import Mathlib.Data.Matrix.Mul
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Algebra.Group.Pointwise.Finset.Basic
+module
+
+public import Mathlib.Tactic.Basic
+public import Mathlib.Tactic.Ring
+public import Mathlib.Tactic.FieldSimp
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.LinearAlgebra.Matrix.Defs
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Algebra.Group.Pointwise.Finset.Basic
+
 
 /-!
 This module defines notions of universality for families of hash functions.
@@ -38,6 +41,8 @@ A family H is strongly universal (also known as "pairwise independent") if
     ``\Pr_i [h_i(x) = a ∧ h_i(y) = b] = 1 / |Output|^2``
 
 -/
+
+@[expose] public section
 
 
 /--
@@ -277,3 +282,5 @@ theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
     <;> aesop
 
 end SeedInputOutput
+
+end

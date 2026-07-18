@@ -3,8 +3,11 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.Basic
-import Mathlib
+module
+
+public import UniversalHashing.Basic
+public import Mathlib
+
 
 /-!
 # ε-Almost Universal Hashing
@@ -78,6 +81,8 @@ These are relaxations of `HashFamily.universal2` and
   }
 
 -/
+
+@[expose] public section
 
 
 
@@ -284,3 +289,5 @@ theorem HashFamily.almostStronglyUniversal2_eps_lower_bound
   field_simp at h_sum_le ⊢; exact h_sum_le
 
 end SeedInputOutput
+
+end

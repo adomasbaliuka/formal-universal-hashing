@@ -3,13 +3,18 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Data.ZMod.Defs
-import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
-import UniversalHashing.BinConvolution.ConvolutionDefs
+module
+
+public import Mathlib.Data.ZMod.Defs
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+public import UniversalHashing.BinConvolution.ConvolutionDefs
+
 
 /-!
 #  ── Bit-reversal
 -/
+
+@[expose] public section
 
 /-  `addMod32` and `subMod32` preserve the `< mod32` bound. -/
 theorem addmod32_lt (a b : UInt32)
@@ -398,3 +403,5 @@ lemma to_mont_ZMod (a : UInt32) (ha : a.toNat < mod32.toNat) :
   apply mul_right_cancel₀ h2_ne
   rw [h_zmod]; ring
 
+
+end
