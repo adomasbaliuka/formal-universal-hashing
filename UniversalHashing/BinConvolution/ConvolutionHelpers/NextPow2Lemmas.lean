@@ -55,6 +55,15 @@ private lemma go_le (n power : ℕ) (h : power > 0) (j : ℕ)
 termination_by n - power
 decreasing_by omega
 
+/--
+Destructuring bridge for core's `Nat.isPowerOfTwo`, which is a plain (unexposed) `def`
+unfolding to an existential. Inside a `module` file `obtain`/`rcases` cannot see
+through it, and core ships no `iff`-lemma; proving it here — where `import all` is
+already required — lets *importers* destructure it without needing `import all`
+themselves.
+-/
+public lemma isPowerOfTwo_iff_exists {n : ℕ} : n.isPowerOfTwo ↔ ∃ k, n = 2 ^ k := Iff.rfl
+
 public lemma nextPow2_nat_ge (n : ℕ) : n ≤ Nat.nextPowerOfTwo n :=
   go_ge n 1 (by omega)
 

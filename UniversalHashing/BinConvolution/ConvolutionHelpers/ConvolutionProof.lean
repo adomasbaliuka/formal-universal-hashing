@@ -18,11 +18,6 @@ public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelper
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersPreproc
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvFull
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvPreproc
--- `import all` (not plain `import`) is required: `Nat.isPowerOfTwo` is an unexposed
--- core `def` unfolding to `∃ ...`, so inside a `module` file `rcases`/`obtain` cannot
--- destructure an `isPowerOfTwo` hypothesis ("not an inductive datatype") without access
--- to core's private scope. Do not "tidy" this into a plain `import`.
-import all Init.Data.Nat.Power2.Basic
 
 
 /-! Correctness proofs for the NTT-based binary convolution pipeline. -/
@@ -183,7 +178,7 @@ lemma ntt_computes_dft_of_montv {m : ℕ}
       ∑ j : Fin m,
         ((toMont (v[j.val])).toNat : ZMod mod32.toNat) * ω ^ (j.val * k.val) := by
   -- Extract n with m = 2^n from the power-of-two hypothesis.
-  obtain ⟨n, hm_eq⟩ := hm_pow2
+  obtain ⟨n, hm_eq⟩ := isPowerOfTwo_iff_exists.mp hm_pow2
   simp only
   intro k
   set ω : ZMod mod32.toNat :=
@@ -390,7 +385,7 @@ theorem ntt_inplace_inverse_correct {m : ℕ}
     ∀ k : Fin result.size, (result[k].toNat : ZMod mod32.toNat) =
       (montR1.toNat : ZMod mod32.toNat)⁻¹ * (m : ZMod mod32.toNat)⁻¹ * ∑ j : Fin m,
         (v[j.val].toNat : ZMod mod32.toNat) * (ω⁻¹) ^ (j.val * k.val) := by
-  obtain ⟨n, hm_eq⟩ := hm_pow2
+  obtain ⟨n, hm_eq⟩ := isPowerOfTwo_iff_exists.mp hm_pow2
   simp only
   intro k
   set ω : ZMod mod32.toNat :=
@@ -412,7 +407,7 @@ theorem ntt_inplace_inverse_correct {m : ℕ}
   -- The result is (outerLoop ... a3 start 64).map (fun x => montMul x inv_n).
   simp only [Bool.false_eq_true, ite_false, Fin.getElem_fin, Vector.getElem_map]
   -- Step 2: show outerLoop computes ref_ntt n ω⁻¹ of the original input.
-  have hroots := ensure_roots_ntt_correct ⟨n, hm_eq⟩ hm_dvd
+  have hroots := ensure_roots_ntt_correct (isPowerOfTwo_iff_exists.mpr ⟨n, hm_eq⟩) hm_dvd
   have hroots_bnd : (ensureRoots m).all (· < mod32) :=
     ensure_roots_bound_nat m (hm_eq ▸ Nat.pow_lt_pow_right (by norm_num) hn)
   have ha3_eq : a3 =
@@ -630,7 +625,7 @@ theorem omega_is_prim_root {m : ℕ}
   · -- divisor is nonzero: `(p-1)/m ≠ 0`
     rw [hk, Nat.mul_div_cancel_left] <;> norm_num
     · rintro rfl; simp only [Nat.mul_zero] at hk; exact absurd hk (by decide)
-    · cases hm_pow2 ; aesop
+    · cases isPowerOfTwo_iff_exists.mp hm_pow2 ; aesop
   · -- divisor divides `p-1`: `(p-1)/m ∣ (p-1)`
     exact Nat.div_dvd_of_dvd (hk.symm ▸ dvd_mul_right _ _)
 
@@ -1105,7 +1100,7 @@ theorem pow2_divides_MOD_sub_one (n : ℕ) (hn : n < 2 ^ 29) :
   rw [this]
   have : Nat.isPowerOfTwo P2n := by
     exact Nat.isPowerOfTwo_nextPowerOfTwo (2 * n)
-  obtain ⟨m, hm⟩ := this
+  obtain ⟨m, hm⟩ := isPowerOfTwo_iff_exists.mp this
   have hP2n_le : P2n ≤ 2 ^ 30 := by
     rw [hP2n]
     apply nextPow2_nat_le

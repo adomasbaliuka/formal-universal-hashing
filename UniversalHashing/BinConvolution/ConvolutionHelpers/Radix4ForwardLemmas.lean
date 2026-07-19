@@ -19,11 +19,6 @@ public import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
 public import UniversalHashing.BinConvolution.ConvolutionDefs
--- `import all` (not plain `import`) is required: `Nat.isPowerOfTwo` is an unexposed
--- core `def` unfolding to `∃ ...`, so inside a `module` file `rcases`/`obtain` cannot
--- destructure an `isPowerOfTwo` hypothesis ("not an inductive datatype") without access
--- to core's private scope. Do not "tidy" this into a plain `import`.
-import all Init.Data.Nat.Power2.Basic
 
 
 /-!
@@ -74,7 +69,7 @@ lemma ensure_roots_ntt_correct {m : ℕ}
     :
     ntt_roots_correct m (ensureRoots m) := by
   intro len j hlen hdvd hj hbound
-  obtain ⟨N, hN⟩ := hm_pow2
+  obtain ⟨N, hN⟩ := isPowerOfTwo_iff_exists.mp hm_pow2
   rw [hN] at hdvd
   obtain ⟨k, hlen_eq⟩ := pow2_dvd_is_pow2 len N hdvd hlen
   have hlend2 : len / 2 = 2^k := by omega
