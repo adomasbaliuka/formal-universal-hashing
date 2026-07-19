@@ -25,3 +25,6 @@ jobs:
       - name: Build and Deploy API-DOCS
         if: github.ref == 'refs/heads/main'
         uses: leanprover-community/docgen-action@v1
+        with:
+          # Bibliography for the references page; docstrings cite it as [Text][bibkey].
+          references: doc/references.bib
