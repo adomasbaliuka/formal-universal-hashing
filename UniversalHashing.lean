@@ -25,8 +25,16 @@ public import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4InverseLe
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
 public import UniversalHashing.BinConvolution.ConvolutionSolution
 public import UniversalHashing.DeltaUniversal
+public import UniversalHashing.InnerProductHash
+public import UniversalHashing.LeftoverHash
 public import UniversalHashing.LinearModp
+public import UniversalHashing.LinearModpAlmostUniversal
 public import UniversalHashing.Matrix
+<<<<<<< Updated upstream
+=======
+public import UniversalHashing.PaperStatements
+public import UniversalHashing.PolynomialHash
+>>>>>>> Stashed changes
 public import UniversalHashing.Toeplitz
 public import UniversalHashing.ToeplitzGeneral
 public import UniversalHashing.ToeplitzNTT
