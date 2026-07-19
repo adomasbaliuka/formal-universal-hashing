@@ -1,7 +1,7 @@
 name = "universal-hashing"
 version = "0.1.0"
 keywords = ["math", "universal", "hashing", "hash"]
-defaultTargets = ["UniversalHashing", "Tests", "toeplitzBench", "Examples"]
+defaultTargets = ["UniversalHashing", "Tests", "Examples"]
 testDriver = "Tests"
 
 [leanOptions]
@@ -22,6 +22,10 @@ name = "UniversalHashing"
 [[lean_lib]]
 name = "Tests"
 
+# NOTE: do *not* add this to `defaultTargets`. The docs CI job asks Lake for the
+# `:docs` facet of every default target, and that facet exists only for `lean_lib` —
+# a `lean_exe` there fails the docs build with "unknown lean_exe facet `docs`".
+# CI compiles it via an explicit `lake build toeplitzBench` step instead.
 [[lean_exe]]
 name = "toeplitzBench"
 root = "Tests.ToeplitzBench"

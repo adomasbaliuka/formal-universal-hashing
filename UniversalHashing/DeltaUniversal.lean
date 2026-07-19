@@ -14,7 +14,8 @@ public import UniversalHashing.Basic
 /-!
 ## ε-Almost Δ-Universal hashing
 
-ε-almost-Δ-universal₂ (ε-A∆U₂), due to [BKST15, Definition 1.1], generalises ε-AU₂ by
+ε-almost-Δ-universal₂ (ε-A∆U₂), due to [bibak_kapron_srinivasan_toth2015],
+Definition 1.1, generalises ε-AU₂ by
 bounding *all* difference probabilities, not just the zero-difference (collision) probability.
 It requires `[AddCommGroup Output]` to express `H s x − H s y`.
 
@@ -33,7 +34,8 @@ The right implication specialises b = 0 (since `H s x − H s y = 0 ↔ H s x = 
 
 * `HashFamily.almostDeltaUniversal2 ε H` (defined in `UniversalHashing.Basic`):
   H is ε-A∆U₂ if for all distinct `x ≠ y` and
-  every `b : Output`: `Pr_{s}[H s x − H s y = b] ≤ ε`. *[BKST15, Definition 1.1]*
+  every `b : Output`: `Pr_{s}[H s x − H s y = b] ≤ ε`.
+  *[bibak_kapron_srinivasan_toth2015], Definition 1.1*
 * `HashFamily.almostDeltaUniversal2_mono`: ε-A∆U₂ is monotone in `ε`.
 * `HashFamily.almostUniversal2_of_almostDeltaUniversal2`: A∆U₂ implies AU₂.
 * `HashFamily.almostDeltaUniversal2_of_almostStronglyUniversal2`: ASU₂ implies A∆U₂.
@@ -74,7 +76,7 @@ omit [Fintype Output] in
 `almostDeltaUniversal2 ε` implies `almostUniversal2 ε`: specialise `b = 0`, since
 `H s x − H s y = 0 ↔ H s x = H s y`.
 
-*[BKST15, Definition 1.1, remark]*
+*[bibak_kapron_srinivasan_toth2015], Definition 1.1, remark*
 -/
 theorem HashFamily.almostUniversal2_of_almostDeltaUniversal2
     {ε : ℚ} (H : HashFamily Seed Input Output)
@@ -89,7 +91,7 @@ gives `Pr[H s x − H s y = b] ≤ ε`.
 This makes the full implication chain
 `almostStronglyUniversal2 ε → almostDeltaUniversal2 ε → almostUniversal2 ε` explicit.
 
-*[BKST15, Definition 1.1; implicit in the paper's discussion]*
+*[bibak_kapron_srinivasan_toth2015], Definition 1.1; implicit in the paper's discussion*
 -/
 theorem HashFamily.almostDeltaUniversal2_of_almostStronglyUniversal2
     [Nonempty Seed]

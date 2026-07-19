@@ -16,17 +16,17 @@ public import UniversalHashing.Util
 * `HashFamily.card_seed_lb_of_almostStronglyUniversal2`:
   Every uniform ε-ASU₂ family (i.e. `HashFamily.uniform H ∧ H.almostStronglyUniversal2 ε`) satisfies
   `|Seed| ≥ 1 + |Input| (|Output| − 1)² / (|Output| ε (|Input| − 1) + |Output| − |Input|)`.
-  *[S94, Theorem 4.3]*
+  *[stinson1994], Theorem 4.3*
 * `HashFamily.card_seed_lb_of_stronglyUniversal2`:
   Every strongly-universal₂ family satisfies `|Seed| ≥ 1 + |Input| (|Output| − 1)`.
-  *[S94, Corollary 4.4]*
+  *[stinson1994], Corollary 4.4*
 * `HashFamily.exists_collision_lb`:
   For any hash family with `|Input| > |Output|`, some pair of distinct inputs has collision
   probability at least `(|Input| − |Output|) / (|Output| (|Input| − 1))`.
-  *[S94, Theorem 3.1]*
+  *[stinson1994], Theorem 3.1*
 * `HashFamily.almostUniversal2_comp`:
   Composing an ε₁-AU₂ family with an ε₂-AU₂ family yields an `(ε₁ + ε₂)`-AU₂ family.
-  *[S94, Theorem 5.4]*
+  *[stinson1994], Theorem 5.4*
 
 -/
 
@@ -314,7 +314,7 @@ Every uniform ε-ASU₂ hash family
 (i.e. `HashFamily.uniform H ∧ H.almostStronglyUniversal2 ε`) satisfies
 `|Seed| ≥ 1 + |Input|·(|Output|−1)² / (|Output|·ε·(|Input|−1) + |Output| − |Input|)`.
 
-*[S94, Theorem 4.3]*
+*[stinson1994], Theorem 4.3*
 -/
 theorem HashFamily.card_seed_lb_of_almostStronglyUniversal2
     [Nonempty Seed] [Nontrivial Input]
@@ -381,7 +381,7 @@ theorem HashFamily.card_seed_lb_of_almostStronglyUniversal2
 /--
 Every strongly-universal₂ hash family satisfies `|Seed| ≥ 1 + |Input| · (|Output| − 1)`.
 
-*[S94, Corollary 4.4]*
+*[stinson1994], Corollary 4.4*
 -/
 theorem HashFamily.card_seed_lb_of_stronglyUniversal2
     [Nonempty Seed] [Nontrivial Input]
@@ -449,7 +449,7 @@ some pair of distinct inputs has collision probability at least
 
 This gives the optimality threshold: no family can be ε-AU for ε below this value.
 
-*[S94, Theorem 3.1]*
+*[stinson1994], Theorem 3.1*
 -/
 theorem HashFamily.exists_collision_lb
     [Nonempty Seed]
@@ -527,7 +527,7 @@ Composing an ε₁-AU family with an ε₂-AU family yields an `(ε₁ + ε₂)`
 Given `H₁ : Seed₁ → Input → Middle` and `H₂ : Seed₂ → Middle → Output`,
 the family `fun (s₁, s₂) x ↦ H₂ s₂ (H₁ s₁ x)` is `(ε₁ + ε₂)`-AU.
 
-*[S94, Theorem 5.4]*
+*[stinson1994], Theorem 5.4*
 -/
 theorem HashFamily.almostUniversal2_comp
     {Input Output : Type*} [DecidableEq Output]

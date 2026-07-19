@@ -43,38 +43,15 @@ The definitions are in `UniversalHashing.Basic`.
 
 ## References
 
-* [BKST15]
-  @misc{cryptoeprint:2015/1187,
-      author = {Khodakhast Bibak and Bruce M. Kapron and Venkatesh Srinivasan and László Tóth},
-      title = {On an almost-universal hash function family with applications to
-      authentication and secrecy codes},
-      howpublished = {Cryptology {ePrint} Archive, Paper 2015/1187},
-      year = {2015},
-      url = {https://eprint.iacr.org/2015/1187}
-  }
-
-* [S94]
-  @Article{Stinson1994,
-    author={Stinson, D. R.},
-    title={Universal hashing and authentication codes},
-    journal={Designs, Codes and Cryptography},
-    year={1994},
-    month={Jul},
-    day={01},
-    volume={4},
-    number={3},
-    pages={369-380},
-    issn={1573-7586},
-    doi={10.1007/BF01388651},
-    url={https://doi.org/10.1007/BF01388651}
-  }
+* [bibak_kapron_srinivasan_toth2015]:
+  "On an almost-universal hash function family with applications to authentication
+  and secrecy codes" by Khodakhast Bibak, Bruce M. Kapron, Venkatesh Srinivasan
+  and László Tóth.
+* [stinson1994]: "Universal hashing and authentication codes" by Stinson, D. R.
 
 -/
 
 @[expose] public section
-
-
-
 
 section SeedInputOutput
 

@@ -36,7 +36,7 @@ abbrev LinearIndex : Type :=
   ``h_{a,b}(x) = a * x + b  (mod p),``
 
 This is a special case of
-family ``H_1`` in [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8)).
+family ``H_1`` in [carter_wegman1979].
 
 where:
 * `p` is prime,
@@ -47,7 +47,7 @@ def linearHashFamily : HashFamily (LinearIndex p) (ZMod p) (ZMod p) :=
   fun i x ↦ i.val.1 * x + i.val.2
 
 -- TODO rename
-/-- Hash family ``H_1`` in [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8)).
+/-- Hash family ``H_1`` in [carter_wegman1979].
 
     ``h_{a,b}(x) = a * x + b  (mod p),``
 

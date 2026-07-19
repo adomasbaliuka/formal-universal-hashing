@@ -15,13 +15,15 @@ import Batteries.Data.BitVec.Lemmas
 
 Computing the Toeplitz hash `toeplitzHash` by school-book matrix-vector multiplication
 takes time quadratic in the block size.
-The Toeplitz structure allows an `O(N log N)` algorithm:
-embed the `m × n` Toeplitz matrix `T` into a **circulant** matrix
+The Toeplitz structure allows an `O(N log N)` algorithm (
+see, e.g., [hayashi_tsurumaru2016] Appendix B.).
+
+- embed the `m × n` Toeplitz matrix `T` into a **circulant** matrix
 `C_T` of size `L × L` with `L = m + n - 1`, zero-pad the input vector to length `L`,
-and compute the circulant-vector product as a circular convolution via the NTT
+- compute the circulant-vector product as a circular convolution via the NTT
 (`circularConvolutionGf2`).
-The first `m` entries of the result are `T x`; the rest is
-discarded.
+- the first `m` entries of the result are `T x`; discard the rest.
+
 
 A circulant matrix is determined by its first column `c_C`; its product with a vector is
 the circular convolution of `c_C` with that vector. Writing the Toeplitz matrix's first
@@ -52,9 +54,9 @@ Main results:
   which instructs the compiler to run `toeplitzHashNTTFast` wherever compiled code
   calls `toeplitzHashNTT` — kernel-checked, unlike `@[implemented_by]`.
 
-`Tests/ToeplitzNTT.lean` additionally checks `toeplitzHashNTT` (and hence, via the
-`@[csimp]` replacement, the fast implementation) against the school-book `toeplitzHash`
-exhaustively for small dimensions.
+`Tests/ToeplitzNTT.lean` additionally checks `toeplitzHashNTT`
+(running the fast implementation via the `@[csimp]` replacement)
+against the school-book `toeplitzHash` for small matrices.
 -/
 
 @[expose] public section

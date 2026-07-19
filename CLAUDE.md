@@ -6,10 +6,15 @@ Formalization of universal hash families in Lean 4 (Mathlib). Everything under
 ## Build and test
 
 ```
-lake build   # library + Tests + toeplitzBench + Examples (all of CI)
-lake test    # runs the #guard suites in Tests/
-lake exe toeplitzBench [core|ntt|schoolbook]   # timings, not run in CI
+lake build              # library + Tests + Examples (the default targets)
+lake build toeplitzBench # the benchmark exe; CI builds this as a separate step
+lake test               # runs the #guard suites in Tests/
+lake exe toeplitzBench [core|ntt|schoolbook]   # timings, never run in CI
 ```
+
+`toeplitzBench` is deliberately **not** a default target: the docs job requests the
+`:docs` facet of every default target, and Lake provides that facet only for
+`lean_lib`, so an executable there fails the docs build.
 
 CI (`lean-action`) runs `lake build` and `lake test`. Every `.lean` file in the repo is
 compiled by `lake build` **except** `UniversalHashing/BinConvolution/ConvolutionChallenge.lean`

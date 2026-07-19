@@ -14,7 +14,12 @@ public import Mathlib.Data.UInt
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
 
 
-/-! # Definitions for GF(2) circular convolution via NTT -/
+/-! # Definitions for GF(2) circular convolution via NTT
+
+The transform below uses the standard toolkit for number-theoretic transforms: a
+`2³⁰`-smooth prime modulus, Montgomery arithmetic for modular multiplication, and a
+radix-4 decimation. See [harvey2014] for a general treatment of fast NTT arithmetic.
+-/
 
 @[expose] public section
 

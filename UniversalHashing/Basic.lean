@@ -198,7 +198,7 @@ A hash family is **strongly-universal-n** (also called "n-wise independent") if
 - and n (not necessarily distinct) outputs `b₁, b₂, ...`,
 exactly ``|HashFamily|/(|Output|^n)`` functions take `a₁` to `b₁` `a₂` to `b₂`, etc.
 
-See [Wegman, Carter 1981](https://doi.org/10.1016/0022-0000(81)90033-7)
+See [wegman_carter1981]
 -/
 def HashFamily.stronglyUniversal_n (n : ℕ) (H : HashFamily Seed Input Output) : Prop :=
   ∀ ⦃a : Fin n → Input⦄, a.Injective -- for n distinct Inputs `a₁, a₂, ...`
@@ -236,7 +236,7 @@ at most `ε`:
 `HashFamily.universal2` is the special case `ε = 1 / |Output|`; see
 `HashFamily.universal2_iff_probUniform`.
 
-*Definition 1.1 in* [BKST15].
+*Definition 1.1 in* [bibak_kapron_srinivasan_toth2015].
 -/
 def HashFamily.almostUniversal2 (ε : ℚ) (H : HashFamily Seed Input Output) : Prop :=
   ∀ ⦃x y : Input⦄, x ≠ y →
@@ -251,11 +251,12 @@ for every pair of distinct inputs `x ≠ y` and all outputs `a, b`:
 `HashFamily.stronglyUniversal2` is the special case `ε = 1 / |Output|` where the bound is tight;
 see `HashFamily.stronglyUniversal2_iff_almostStronglyUniversal2`.
 
-*Definition 1.1 in* [BKST15]. This is the prevalent definition in modern literature.
+*Definition 1.1 in* [bibak_kapron_srinivasan_toth2015]. This is the prevalent
+definition in modern literature.
 
 ### Relationship to alternative definitions
 
-[S94] additionally requires **uniformity** `Pr_{s}[H s x = a] = 1 / |Output|`
+[stinson1994] additionally requires **uniformity** `Pr_{s}[H s x = a] = 1 / |Output|`
 (see `HashFamily.uniform`), i.e., the conjunction `H.uniform ∧ H.almostStronglyUniversal2 ε`.
 
 The uniformity condition is motivated by Wegman–Carter MACs, where it ensures that
@@ -272,7 +273,7 @@ A hash family is **uniform** if every input maps to every output with equal prob
 
   `Pr_{s}[H s x = a] = 1 / |Output|`
 
-[S94] defines ε-ASU₂ as the conjunction
+[stinson1994] defines ε-ASU₂ as the conjunction
 `H.uniform ∧ H.almostStronglyUniversal2 ε`; see `HashFamily.almostStronglyUniversal2` for
 a discussion of the two definitions and when they coincide.
 -/
@@ -289,10 +290,10 @@ two distinct inputs `x` and `y` and every group element `b : Output`:
 This is strictly stronger than `almostUniversal2` (which only bounds the b = 0 case)
 and strictly weaker than `almostStronglyUniversal2` (which bounds joint probabilities).
 
-*Definition 1.1 in* [BKST15].
+*Definition 1.1 in* [bibak_kapron_srinivasan_toth2015].
 
 When `Seed = Fin ℓ → ZMod 2`, `Input = Fin m → ZMod 2`, `Output = Fin n → ZMod 2`, this is
-equivalent to Krawczyk's ε-otp-security (Definition 1 in [Krawczyk95]) with **uniform** key
+equivalent to Krawczyk's ε-otp-security (Definition 1 in [krawczyk1995]) with **uniform** key
 distribution: for any distinct M ≠ M' and any target b,
 `Pr_{k uniform}[H(k, M') − H(k, M) = b] ≤ ε`.
 -/
@@ -325,7 +326,7 @@ def HashFamily.deltaUniversal2 [AddCommGroup Output]
 A hash family is **additive** (Krawczyk's "⊕-linear" over bit strings) if every member
 is an additive map: `H s (x + y) = H s x + H s y`.
 
-*Definition 2 in* [Krawczyk 1994] (LFSR-based Hashing and Authentication, CRYPTO '94).
+*Definition 2 in* [krawczyk1994].
 -/
 def HashFamily.additive [Add Input] [Add Output]
     (H : HashFamily Seed Input Output) : Prop :=
@@ -339,7 +340,7 @@ A hash family is **ε-balanced** if no nonzero input concentrates on any output 
 For `additive` families this is equivalent to `almostDeltaUniversal2 ε`
 (`HashFamily.additive_balanced_iff_almostDeltaUniversal2`).
 
-*Definition 3 in* [Krawczyk 1994].
+*Definition 3 in* [krawczyk1994].
 -/
 def HashFamily.balanced [Zero Input] (ε : ℚ) (H : HashFamily Seed Input Output) : Prop :=
   ∀ ⦃x : Input⦄, x ≠ 0 → ∀ (c : Output),
