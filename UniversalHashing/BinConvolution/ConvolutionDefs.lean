@@ -6,20 +6,12 @@ Authors: Adomas Baliuka
 module
 
 public import Batteries.Data.BitVec.Basic
-meta import Batteries.Data.BitVec.Basic
 public import Mathlib.Algebra.Order.Ring.Star
-meta import Mathlib.Algebra.Order.Ring.Star
 public import Mathlib.Algebra.Ring.BooleanRing
-meta import Mathlib.Algebra.Ring.BooleanRing
 public import Mathlib.Analysis.Normed.Ring.Lemmas
-meta import Mathlib.Analysis.Normed.Ring.Lemmas
 public import Mathlib.Data.Int.Star
-meta import Mathlib.Data.Int.Star
 public import Mathlib.Data.UInt
-meta import Mathlib.Data.UInt
-
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
-meta import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
 
 
 /-! # Definitions for GF(2) circular convolution via NTT -/
@@ -296,17 +288,7 @@ def BitVec.circConvolutionBruteforce {n : ℕ} (v1 v2 : BitVec n) : BitVec n :=
     ∑ (j : Fin n), v1[j] * v2[i - j]
 
 
-section Testing
-
-set_option linter.hashCommand false
-
-#guard 0b1111 == circularConvolutionGf2 (0b1100) (0b1010#4)
-#guard 0b1111 == BitVec.circConvolutionBruteforce 0b1100 0b1010#4
-#guard
-  let a := 0b11000010010010#101
-  let b := 0b01010101001001#101
-  circularConvolutionGf2 a b == BitVec.circConvolutionBruteforce a b
-
-end Testing
+-- Executable sanity checks for the definitions above live in `Tests/ConvolutionDefs.lean`
+-- (run by `lake test` and in CI).
 
 end

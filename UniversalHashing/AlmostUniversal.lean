@@ -6,34 +6,23 @@ Authors: Adomas Baliuka
 module
 
 public import UniversalHashing.Basic
-public import Mathlib
+public import Mathlib.Algebra.EuclideanDomain.Basic
+public import Mathlib.Algebra.EuclideanDomain.Field
+public import Mathlib.Algebra.Order.Ring.Star
+public import Mathlib.Data.Rat.Star
 
 
 /-!
 # ε-Almost Universal Hashing
 
-This file defines the notions
-- `ε`-almost-universal₂ (ε-AU₂)
-- `ε`-almost-strongly-universal₂ (ε-ASU₂)
+This file proves things about
+- `ε`-almost-universal₂ (ε-AU₂), see `HashFamily.almostUniversal2`
+- `ε`-almost-strongly-universal₂ (ε-ASU₂), see `HashFamily.almostStronglyUniversal2`
+- uniformity, see `HashFamily.uniform`
 
 These are relaxations of `HashFamily.universal2` and
 `HashFamily.stronglyUniversal2` where equality/bounds are replaced by `ε`.
-
-## Main definitions
-
-* `HashFamily.almostUniversal2 ε H`: H is `ε`-almost-universal₂ (ε-AU₂) if
-  for all distinct `x ≠ y`:
-  `Pr_{s}[H s x = H s y] ≤ ε`.
-
-* `HashFamily.uniform H`: H is **uniform** if for all hash inputs `x` and outputs `a`,
-  `Pr_{s}[H s x = a] = 1 / |Output|`.
-
-* `HashFamily.almostStronglyUniversal2 ε H`: H is `ε`-almost-strongly-universal₂ (ε-ASU₂) if
-  for all distinct inputs `x ≠ y` and all outputs `a b`:
-  `Pr_{s}[H s x = a ∧ H s y = b] ≤ ε / |Output|`.
-  See ([BKST15] Definition 1.1).
-  Note: some papers use a different definition which furthermore requires uniformity,
-  e.g., [S94]. We do not.
+The definitions are in `UniversalHashing.Basic`.
 
 ## Main results
 
@@ -92,60 +81,6 @@ section SeedInputOutput
 variable {Seed Input Output : Type*}
   [Fintype Seed] [Fintype Output]
   [DecidableEq Output]
-
-/--
-A hash family is **ε-almost-universal₂ (ε-AU₂)** with parameter `ε : ℚ` if for any two
-distinct inputs `x` and `y`, the probability over a uniform random seed of a collision is
-at most `ε`:
-
-  `Pr_{s}[H s x = H s y] ≤ ε`
-
-`HashFamily.universal2` is the special case `ε = 1 / |Output|`; see
-`HashFamily.universal2_iff_probUniform`.
-
-*Definition 1.1 in* [BKST15].
--/
-def HashFamily.almostUniversal2 (ε : ℚ) (H : HashFamily Seed Input Output) : Prop :=
-  ∀ ⦃x y : Input⦄, x ≠ y →
-    probUniform (fun s ↦ H s x = H s y) ≤ ε
-
-/--
-A hash family is **ε-almost-strongly-universal₂ (ε-ASU₂)** with parameter `ε : ℚ` if
-for every pair of distinct inputs `x ≠ y` and all outputs `a, b`:
-
-  `Pr_{s}[H s x = a ∧ H s y = b] ≤ ε / |Output|`
-
-`HashFamily.stronglyUniversal2` is the special case `ε = 1 / |Output|` where the bound is tight;
-see `HashFamily.stronglyUniversal2_iff_almostStronglyUniversal2`.
-
-*Definition 1.1 in* [BKST15]. This is the prevalent definition in modern literature.
-
-### Relationship to alternative definitions
-
-[S94] additionally requires **uniformity** `Pr_{s}[H s x = a] = 1 / |Output|`
-(see `HashFamily.uniform`), i.e., the conjunction `H.uniform ∧ H.almostStronglyUniversal2 ε`.
-
-The uniformity condition is motivated by Wegman–Carter MACs, where it ensures that
-observing a tag `(m, t)` reveals no information about the key.
-The two definitions coincide when `ε = 1 / |Output|` (the strongly-universal case):
-the joint bound then forces all marginals to equal `1 / |Output|`, implying uniformity.
--/
-def HashFamily.almostStronglyUniversal2 (ε : ℚ) (H : HashFamily Seed Input Output) : Prop :=
-  ∀ ⦃x y : Input⦄, x ≠ y → ∀ (a b : Output),
-    probUniform (fun s ↦ H s x = a ∧ H s y = b) ≤ ε / Fintype.card Output
-
-/--
-A hash family is **uniform** if every input maps to every output with equal probability:
-
-  `Pr_{s}[H s x = a] = 1 / |Output|`
-
-[S94] defines ε-ASU₂ as the conjunction
-`H.uniform ∧ H.almostStronglyUniversal2 ε`; see `HashFamily.almostStronglyUniversal2` for
-a discussion of the two definitions and when they coincide.
--/
-def HashFamily.uniform (H : HashFamily Seed Input Output) : Prop :=
-  ∀ (x : Input) (a : Output),
-    probUniform (fun s ↦ H s x = a) = (1 : ℚ) / Fintype.card Output
 
 omit [Fintype Output] in
 theorem HashFamily.almostUniversal2_mono
@@ -286,7 +221,10 @@ theorem HashFamily.almostStronglyUniversal2_eps_lower_bound
       (Finset.sum_le_sum fun _ _ ↦ Finset.sum_le_sum fun _ _ ↦ h_bound _ _)
       (by simp)
   by_cases hcard : Fintype.card Output = 0 <;> simp_all [sq, mul_assoc, div_eq_mul_inv]
-  field_simp at h_sum_le ⊢; exact h_sum_le
+  field_simp at h_sum_le ⊢
+  exact le_of_mul_le_mul_left
+    (by rw [mul_one, ← mul_assoc]; exact h_sum_le)
+    (Nat.cast_pos.mpr Fintype.card_pos)
 
 end SeedInputOutput
 

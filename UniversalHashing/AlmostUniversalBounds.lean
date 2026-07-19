@@ -231,18 +231,6 @@ private lemma cauchy_schwarz_count {Seed Input Output : Type*}
       ⟨H s (Classical.arbitrary Input)⟩)) |>.2
     (by simpa only [h_sum_card] using h_cs)
 
-/-- The collision probability on a product seed space factors over the first coordinate:
-`Pr_{s₁×s₂}[P] = (∑ s₁, Pr_{s₂}[P s₁]) / |S₁|`. -/
-private lemma probUniform_prod {S₁ S₂ : Type*} [Fintype S₁] [Fintype S₂]
-    (P : S₁ → S₂ → Prop) [∀ s₁ s₂, Decidable (P s₁ s₂)] :
-    (Fintype.card {s : S₁ × S₂ // P s.1 s.2} : ℚ) / Fintype.card (S₁ × S₂) =
-    (∑ s₁ : S₁, (Fintype.card {s₂ : S₂ // P s₁ s₂} : ℚ) / Fintype.card S₂) /
-    Fintype.card S₁ := by
-  simp only [Fintype.card_subtype, Fintype.card_prod, Nat.cast_mul, Finset.sum_div]
-  rw [Finset.card_filter]
-  erw [Finset.sum_product]
-  simp [div_eq_mul_inv, mul_comm, Finset.mul_sum, mul_left_comm]
-
 /-- Cauchy-Schwarz inequality for double sums: lifts `Finset.sum_mul_sq_le_sq_mul_sq`
 from a product index to an iterated double sum. -/
 private lemma double_sum_cauchy_schwarz {α : Type*} [Fintype α] (u v : α → α → ℝ) :
@@ -378,7 +366,10 @@ theorem HashFamily.card_seed_lb_of_almostStronglyUniversal2
         ((Fintype.card Seed : ℚ) * (Fintype.card Output : ℚ) * (1 + (Fintype.card Input - 1) * ε) -
           (Fintype.card Input : ℚ) * (Fintype.card Output : ℚ)^2) := by
       have h_subst := helper_ineq_of_almostStronglyUniversal2 h_unif hH
-      field_simp [mul_comm, mul_assoc, mul_left_comm] at h_subst ⊢
+      have hI : (0 : ℚ) < Fintype.card Input := Nat.cast_pos.mpr Fintype.card_pos
+      have hS : (0 : ℚ) < Fintype.card Seed := Nat.cast_pos.mpr Fintype.card_pos
+      field_simp [hOpos.ne', hI.ne', hS.ne'] at h_subst
+      ring_nf at h_subst ⊢
       linarith
     have hb : (1 : ℚ) < Fintype.card Seed := by exact_mod_cast hv.2.2
     have hD := hv.2.1

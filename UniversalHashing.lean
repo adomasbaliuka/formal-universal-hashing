@@ -27,6 +27,8 @@ public import UniversalHashing.BinConvolution.ConvolutionSolution
 public import UniversalHashing.DeltaUniversal
 public import UniversalHashing.LinearModp
 public import UniversalHashing.Matrix
+public import UniversalHashing.PaperStatements
 public import UniversalHashing.Toeplitz
 public import UniversalHashing.ToeplitzGeneral
+public import UniversalHashing.ToeplitzNTT
 public import UniversalHashing.Util

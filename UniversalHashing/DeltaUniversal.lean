@@ -1,11 +1,14 @@
+/-
+Copyright (c) 2026 Adomas Baliuka. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Adomas Baliuka
+-/
 module
 
 public import UniversalHashing.AlmostUniversal
 public import Mathlib.Data.Real.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Algebra.Order.Star.Real
-public import Mathlib.Tactic
-
 public import UniversalHashing.Basic
 
 /-!
@@ -28,7 +31,8 @@ The chain of implications is:
 The left implication sums the joint bound over all a : Output to bound each difference.
 The right implication specialises b = 0 (since `H s x − H s y = 0 ↔ H s x = H s y`).
 
-* `HashFamily.almostDeltaUniversal2 ε H`: H is ε-A∆U₂ if for all distinct `x ≠ y` and
+* `HashFamily.almostDeltaUniversal2 ε H` (defined in `UniversalHashing.Basic`):
+  H is ε-A∆U₂ if for all distinct `x ≠ y` and
   every `b : Output`: `Pr_{s}[H s x − H s y = b] ≤ ε`. *[BKST15, Definition 1.1]*
 * `HashFamily.almostDeltaUniversal2_mono`: ε-A∆U₂ is monotone in `ε`.
 * `HashFamily.almostUniversal2_of_almostDeltaUniversal2`: A∆U₂ implies AU₂.
@@ -48,24 +52,13 @@ variable {Seed Input Output : Type*}
   [AddCommGroup Output]
 
 /--
-A hash family is **ε-almost-Δ-universal₂ (ε-A∆U₂)** with parameter `ε : ℚ` if for any
-two distinct inputs `x` and `y` and every group element `b : Output`:
-
-  `Pr_{s}[H s x − H s y = b] ≤ ε`
-
-This is strictly stronger than `almostUniversal2` (which only bounds the b = 0 case)
-and strictly weaker than `almostStronglyUniversal2` (which bounds joint probabilities).
-
-*Definition 1.1 in* [BKST15].
-
-When `Seed = Fin ℓ → ZMod 2`, `Input = Fin m → ZMod 2`, `Output = Fin n → ZMod 2`, this is
-equivalent to Krawczyk's ε-otp-security (Definition 1 in [Krawczyk95]) with **uniform** key
-distribution: for any distinct M ≠ M' and any target b,
-`Pr_{k uniform}[H(k, M') − H(k, M) = b] ≤ ε`.
+A perfectly Δ-universal family is `(1 / |Output|)`-A∆U₂ — with the optimal parameter,
+since for fixed `x ≠ y` the probabilities `Pr[H s x − H s y = b]` sum to `1` over `b`.
 -/
-def HashFamily.almostDeltaUniversal2 (ε : ℚ) (H : HashFamily Seed Input Output) : Prop :=
-  ∀ ⦃x y : Input⦄, x ≠ y → ∀ (b : Output),
-    probUniform (fun s ↦ H s x - H s y = b) ≤ ε
+theorem HashFamily.almostDeltaUniversal2_of_deltaUniversal2
+    (H : HashFamily Seed Input Output) (h : H.deltaUniversal2) :
+    H.almostDeltaUniversal2 ((1 : ℚ) / Fintype.card Output) :=
+  fun _ _ hxy b ↦ (h hxy b).le
 
 omit [Fintype Output] in
 /--

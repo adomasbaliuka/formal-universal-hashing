@@ -5,7 +5,8 @@ Authors: Adomas Baliuka
 -/
 module
 
-public import Mathlib
+public import Mathlib.Algebra.Field.GeomSum
+public import Mathlib.Tactic.LinearCombinationPrime
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
@@ -17,6 +18,10 @@ public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelper
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersPreproc
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvFull
 public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvPreproc
+-- `import all` (not plain `import`) is required: `Nat.isPowerOfTwo` is an unexposed
+-- core `def` unfolding to `∃ ...`, so inside a `module` file `rcases`/`obtain` cannot
+-- destructure an `isPowerOfTwo` hypothesis ("not an inductive datatype") without access
+-- to core's private scope. Do not "tidy" this into a plain `import`.
 import all Init.Data.Nat.Power2.Basic
 
 
