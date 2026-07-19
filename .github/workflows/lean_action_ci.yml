@@ -24,7 +24,13 @@ jobs:
         run: lake build toeplitzBench
       - name: Build and Deploy API-DOCS
         if: github.ref == 'refs/heads/main'
-        uses: leanprover-community/docgen-action@v1
+        # Pinned to a `main` SHA, not `@v1`: the `v1` branch is frozen at a commit
+        # predating the `references` input (added 2025-11), so it silently ignored it
+        # and doc-gen4 logged "reference page disabled". The repo publishes no tags.
+        uses: leanprover-community/docgen-action@10db47458f91456d87804787d3dfcd914b9a19e3 # main @ 2026-06-07
         with:
-          # Bibliography for the references page; docstrings cite it as [Text][bibkey].
+          # Bibliography for the references page; docstrings cite it as [bibkey]
+          # (doc-gen4 injects a link definition for every key it finds bracketed).
+          # The action copies this to `docbuild/docs/references.bib`, the only path
+          # doc-gen4's `bibPrepass` looks at.
           references: doc/references.bib
