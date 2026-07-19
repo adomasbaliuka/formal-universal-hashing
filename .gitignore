@@ -1,3 +1,5 @@
-/.lake
+.lake/
 WIP/
 tmp/
+.idea/
+.claude/
