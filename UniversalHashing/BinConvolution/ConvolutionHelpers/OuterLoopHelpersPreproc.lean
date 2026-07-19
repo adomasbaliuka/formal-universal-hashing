@@ -3,12 +3,15 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Data.Nat.Bitwise
-import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForward
+module
+
+public import Mathlib.Data.Nat.Bitwise
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForward
+
 
 
 
@@ -18,6 +21,8 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersForwar
 Bit-reversal permutation lemmas and `preprocessing_establishes_inv`, split out from
 `OuterLoopHelpersForward` to keep per-file elaboration memory bounded.
 -/
+
+@[expose] public section
 
 /-! ### Bit-reversal helper lemmas -/
 
@@ -605,3 +610,5 @@ lemma preprocessing_establishes_inv {m : ℕ} (n : ℕ)
       have heq : bitRev n idx = bitRev n b := by rw [hidx_b]
       rw [getElem_congr_idx (c := v) heq]
     rw [h_a1]
+
+end

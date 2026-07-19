@@ -3,26 +3,31 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Algebra.Lie.OfAssociative
-import Mathlib.Algebra.Order.Ring.Int
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Algebra.Polynomial.AlgebraMap
-import Mathlib.Algebra.Polynomial.BigOperators
-import Mathlib.Analysis.Normed.Ring.Lemmas
-import Mathlib.Data.Finsupp.Defs
-import Mathlib.Data.Int.ConditionallyCompleteOrder
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.ZMod.Defs
-import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.Matrix.Circulant
-import Mathlib.LinearAlgebra.Matrix.Defs
-import Mathlib.Order.ConditionallyCompleteLattice.Basic
-import Mathlib.Order.Interval.Finset.Defs
-import Mathlib.Tactic.Linarith.Frontend
+module
+
+public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Algebra.Order.Ring.Int
+public import Mathlib.Algebra.Order.Ring.Star
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Analysis.Normed.Ring.Lemmas
+public import Mathlib.Data.Finsupp.Defs
+public import Mathlib.Data.Int.ConditionallyCompleteOrder
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.ZMod.Defs
+public import Mathlib.LinearAlgebra.Basis.VectorSpace
+public import Mathlib.LinearAlgebra.Matrix.Circulant
+public import Mathlib.LinearAlgebra.Matrix.Defs
+public import Mathlib.Order.ConditionallyCompleteLattice.Basic
+public import Mathlib.Order.Interval.Finset.Defs
+public import Mathlib.Tactic.Linarith.Frontend
+
 
 /-! # Toeplitz Matrices
 This module defines Toeplitz matrices, i.e., matrices with constant diagonals.
 -/
+
+@[expose] public section
 
 open scoped Nat
 
@@ -278,3 +283,5 @@ theorem toeplitz_mulVec_surjective {F : Type*} [Field F] {m n : ℕ} [NeZero m] 
       Finset.mem_univ, true_and, ne_eq, Fin.ext_iff, and_self, implies_true]
     intro j hj₁ hj₂
     rw [tsub_right_inj] at hj₁ <;> omega
+
+end

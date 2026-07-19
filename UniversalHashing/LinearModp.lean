@@ -3,10 +3,13 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Analysis.Normed.Field.Lemmas
-import Mathlib.Data.Rat.Star
-import UniversalHashing.Basic
+module
+
+public import Mathlib.Algebra.Order.Ring.Star
+public import Mathlib.Analysis.Normed.Field.Lemmas
+public import Mathlib.Data.Rat.Star
+public import UniversalHashing.Basic
+
 
 /-! # Carter–Wegman-style universal hash family.
 
@@ -14,6 +17,8 @@ import UniversalHashing.Basic
 
 Main result: `linearHashFamily.universal2`
 -/
+
+@[expose] public section
 
 
 
@@ -101,3 +106,5 @@ example : ¬ (linearHashFamily 2).stronglyUniversal2 := by
     norm_num
 
 end LinearFamily
+
+end

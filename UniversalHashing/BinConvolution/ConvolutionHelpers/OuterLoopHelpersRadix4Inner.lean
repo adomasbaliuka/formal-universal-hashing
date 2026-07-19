@@ -3,12 +3,15 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
+module
+
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.RootTableLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
+
 
 
 
@@ -18,6 +21,8 @@ import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
 This file contains `radix4Inner_single_block_correct`, split out from `OuterLoopHelpers`
 to keep per-file elaboration memory bounded.
 -/
+
+@[expose] public section
 
 /-- Proves that a butterfly at j2 ≠ j2nat does not touch any of the four
     block positions corresponding to j2nat. Isolated here so omega runs with
@@ -639,3 +644,5 @@ lemma radix4Inner_single_block_correct {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     h_split h_trailing_pos0 h_trailing_pos1 h_trailing_pos2 h_trailing_pos3
     hbf0 hbf1 hbf2 hbf3
     h_tau1 h_tau2 h_tau3
+
+end

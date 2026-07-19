@@ -3,11 +3,14 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4InverseLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
+module
+
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.MontgomeryLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4InverseLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
+
 
 
 /-! ## Inverse NTT outer-loop infrastructure
@@ -21,6 +24,8 @@ inverse pass (`inverse = true`).  The key differences:
   the Montgomery preprocessing (`v[...]` instead of `toMont (v[...])`).
 The `ref_ntt_radix4_q*` decomposition lemmas are abstract over the root, so they apply unchanged
 with the inverse top-level root `ω_top⁻¹`. -/
+
+@[expose] public section
 
 
 /-- Structural fact: `butterfly4` (any `inverse` flag) leaves position `i` unchanged when `i` is
@@ -287,3 +292,5 @@ lemma ntt_sub_input_inv_block_3 {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
         norm_num [Nat.add_comm 2, pow_add]
         ring
       grind
+
+end

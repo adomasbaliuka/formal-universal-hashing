@@ -10,7 +10,22 @@ public import Mathlib.Data.Int.Star
 public import Mathlib.Data.Nat.Log
 import all Init.Data.Nat.Power2.Basic
 
-/-! # Lemmas about `Nat.nextPowerOfTwo` -/
+/-! # Lemmas about `Nat.nextPowerOfTwo`
+
+## Do not simplify this file's header
+
+The four parts of the header are coupled and each breaks the file differently if
+changed: `module` activates explicit-export mode; `import all` reaches
+`Nat.nextPowerOfTwo.go`, a *private* core auxiliary; the `public import`s re-export
+names appearing in the exported lemma signatures; and `public lemma` exports each
+lemma.
+
+Rewriting `go_ge`/`go_le` to avoid `.go` is impossible: `Nat.nextPowerOfTwo` is opaque
+without it, and the only public spec (`Nat.isPowerOfTwo_nextPowerOfTwo`) does not pin
+the value. Lean core itself uses this same `import all` idiom for its own
+`Init.Data.Nat.Power2.Lemmas`, so the pattern is the intended one. In particular, do
+**not** replace this file with a `2 ^ Nat.clog 2 n` workaround.
+-/
 
 private lemma go_ge (n power : ℕ) (h : power > 0) :
     n ≤ Nat.nextPowerOfTwo.go n power h := by
@@ -39,6 +54,15 @@ private lemma go_le (n power : ℕ) (h : power > 0) (j : ℕ)
   · exact hp
 termination_by n - power
 decreasing_by omega
+
+/--
+Destructuring bridge for core's `Nat.isPowerOfTwo`, which is a plain (unexposed) `def`
+unfolding to an existential. Inside a `module` file `obtain`/`rcases` cannot see
+through it, and core ships no `iff`-lemma; proving it here — where `import all` is
+already required — lets *importers* destructure it without needing `import all`
+themselves.
+-/
+public lemma isPowerOfTwo_iff_exists {n : ℕ} : n.isPowerOfTwo ↔ ∃ k, n = 2 ^ k := Iff.rfl
 
 public lemma nextPow2_nat_ge (n : ℕ) : n ≤ Nat.nextPowerOfTwo n :=
   go_ge n 1 (by omega)

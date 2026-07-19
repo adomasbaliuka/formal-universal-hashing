@@ -3,12 +3,15 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Batteries.Data.Vector.Lemmas
-import Mathlib.Algebra.Order.Ring.Nat
-import Mathlib.Algebra.Order.Sub.Basic
-import Mathlib.Tactic.Ring.RingNF
-import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
-import UniversalHashing.BinConvolution.ConvolutionDefs
+module
+
+public import Batteries.Data.Vector.Lemmas
+public import Mathlib.Algebra.Order.Ring.Nat
+public import Mathlib.Algebra.Order.Sub.Basic
+public import Mathlib.Tactic.Ring.RingNF
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
+public import UniversalHashing.BinConvolution.ConvolutionDefs
+
 
 /-!
 # Radix-4 inverse butterfly
@@ -21,6 +24,8 @@ import UniversalHashing.BinConvolution.ConvolutionDefs
   `primRoot^{(mod64-1)/2} = -1` in ZMod mod64, so the negated twiddle equals
   `ω^{(mod64-1)/len * (len - j2)} * R` where `ω = primRoot`.
 -/
+
+@[expose] public section
 
 /-- Negation of a `UInt32 < mod32` in `ZMod mod32.toNat`:
     `(mod32 - r).toNat ≡ -r` (mod `mod32`). -/
@@ -836,3 +841,5 @@ lemma butterfly4_inverse_ZMod_combined {N : ℕ}
     hN_dvd hj2 hbnd0 hbnd1 hbnd2 hbnd3,
   butterfly4_inverse_ZMod_pos3 roots a ha hroots hroots_bnd s len i2 j2 hlen hlen_dvd
     hN_dvd hj2 hbnd0 hbnd1 hbnd2 hbnd3⟩
+
+end

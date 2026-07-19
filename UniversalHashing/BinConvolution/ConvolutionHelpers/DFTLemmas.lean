@@ -3,11 +3,14 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Algebra.BigOperators.Group.Finset.Defs
-import Mathlib.Algebra.Lie.OfAssociative
-import Mathlib.Algebra.Ring.Defs
-import Mathlib.AlgebraicTopology.SimplexCategory.Basic
-import Mathlib.Data.Fintype.Basic
+module
+
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
+public import Mathlib.Data.Fintype.Basic
+
 /-!
 # DFT Algebraic Lemmas
 
@@ -15,6 +18,8 @@ This file contains the algebraic identities needed for the NTT correctness proof
 in particular the Danielson-Lanczos (butterfly) splitting identity and the
 recursive DFT definition.
 -/
+
+@[expose] public section
 
 
 section DFTAlgebra
@@ -145,3 +150,5 @@ theorem ref_ntt_eq_dft (n : ℕ) (ω : R)
       · cases n <;> simp_all [pow_succ', pow_mul]
 
 end DFTAlgebra
+
+end

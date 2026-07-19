@@ -3,15 +3,20 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Mathlib.Analysis.Complex.Exponential
-import Mathlib.Analysis.RCLike.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Mathlib.Algebra.Order.Star.Real
+module
+
+public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Algebra.Order.Star.Real
+
 
 /-!
 # Utility lemmas
 
 -/
+
+@[expose] public section
 
 section Util
 
@@ -89,3 +94,5 @@ lemma sum_fiber_card {α β : Type*} [Fintype α] [Fintype β] [DecidableEq β]
   simp [eq_comm]
 
 end FiberCard
+
+end

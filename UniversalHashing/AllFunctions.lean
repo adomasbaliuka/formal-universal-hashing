@@ -3,7 +3,10 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.Basic
+module
+
+public import UniversalHashing.Basic
+
 
 /-!
 The hash family "all functions" has all properties we define.
@@ -12,6 +15,8 @@ It is completely impractical for pretty much all use-cases (due to being too big
 This file just proves those statements for the sake if illustrating this fact and adding confidence
 that the definitions are correct.
 -/
+
+@[expose] public section
 
 
 section
@@ -65,5 +70,7 @@ example [Inhabited Input] [Inhabited Output] :
   apply HashFamily.universal2_of_stronglyUniversal2
   exact (HashFamily.stronglyUniversal2_stronglyUniversal_n_2
     (fun (s : Input → Output) (i : Input) ↦ s i)).mpr (all_functions_strongly_universal_n 2)
+
+end
 
 end

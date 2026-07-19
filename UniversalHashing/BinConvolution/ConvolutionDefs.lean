@@ -3,16 +3,20 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import Batteries.Data.BitVec.Basic
-import Mathlib.Algebra.Order.Ring.Star
-import Mathlib.Algebra.Ring.BooleanRing
-import Mathlib.Analysis.Normed.Ring.Lemmas
-import Mathlib.Data.Int.Star
-import Mathlib.Data.UInt
+module
 
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
+public import Batteries.Data.BitVec.Basic
+public import Mathlib.Algebra.Order.Ring.Star
+public import Mathlib.Algebra.Ring.BooleanRing
+public import Mathlib.Analysis.Normed.Ring.Lemmas
+public import Mathlib.Data.Int.Star
+public import Mathlib.Data.UInt
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.NextPow2Lemmas
+
 
 /-! # Definitions for GF(2) circular convolution via NTT -/
+
+@[expose] public section
 
 /-- The NTT-friendly prime modulus `p = 3·2³⁰ + 1 = 3221225473`, as a `UInt64`.
 Its `2³⁰`-smooth factor `p - 1 = 3·2³⁰` provides power-of-two roots of unity for the transform. -/
@@ -284,15 +288,7 @@ def BitVec.circConvolutionBruteforce {n : ℕ} (v1 v2 : BitVec n) : BitVec n :=
     ∑ (j : Fin n), v1[j] * v2[i - j]
 
 
-section Testing
+-- Executable sanity checks for the definitions above live in `Tests/ConvolutionDefs.lean`
+-- (run by `lake test` and in CI).
 
-set_option linter.hashCommand false
-
-#guard 0b1111 == circularConvolutionGf2 (0b1100) (0b1010#4)
-#guard 0b1111 == BitVec.circConvolutionBruteforce 0b1100 0b1010#4
-#guard
-  let a := 0b11000010010010#101
-  let b := 0b01010101001001#101
-  circularConvolutionGf2 a b == BitVec.circConvolutionBruteforce a b
-
-end Testing
+end

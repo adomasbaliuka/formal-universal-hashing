@@ -3,13 +3,16 @@ Copyright (c) 2026 Adomas Baliuka. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adomas Baliuka
 -/
-import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvFull
-import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersPreproc
+module
+
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.DFTLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.NttBoundLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.Radix4ForwardLemmas
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpers
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInverseNTT
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersInvFull
+public import UniversalHashing.BinConvolution.ConvolutionHelpers.OuterLoopHelpersPreproc
+
 
 
 
@@ -22,6 +25,8 @@ the `outerLoop_inv_inverse` holds at the starting level `start_q`.
 This mirrors `preprocessing_establishes_inv` but for the inverse path:
 no `toMont` is applied, and the invariant uses `ntt_sub_input_inv`.
 -/
+
+@[expose] public section
 
 lemma preprocessing_establishes_inv_inverse {m : ℕ} (n : ℕ)
     (hm_eq : m = 2 ^ n)
@@ -201,3 +206,5 @@ lemma preprocessing_establishes_inv_inverse {m : ℕ} (n : ℕ)
       have heq : bitRev n idx = bitRev n b := by rw [hidx_b]
       exact getElem_congr_idx (c := v) heq
     exact congrArg (Nat.cast (R := ZMod mod32.toNat)) h_a1_nat
+
+end
