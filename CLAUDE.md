@@ -83,6 +83,18 @@ or a targeted `simp only` works (`grind` is slow and opaque), and avoid `refine'
 
 ## Gotchas worth knowing
 
+**A failing `#synth` does not say why it failed.** The instance may not exist, or it may
+exist and simply not be reachable from this file's imports; the error looks the same
+either way, so grep Mathlib before defining one locally. Search for the *type*, not just
+the class — instances hide in unexpected files. `Fintype (BitVec w)` lives in
+`Mathlib.Data.FinEnum` (as `FinEnum (BitVec n)` plus the generic `[FinEnum α] → Fintype
+α`), not in `Mathlib.Data.BitVec`, and nothing pulls `FinEnum` in transitively. Adding
+the import beats redefining: a duplicate instance is not an error, so nothing warns you,
+and the two are propositionally equal but not defeq — once both are in scope,
+`Fintype.card X` becomes two atoms that print identically (same failure mode as the
+`linarith` gotcha below). Defining one anyway is fine when the import cost is real, but
+say so in the docstring.
+
 **Subtype cardinality and `linarith`.** `Fintype.card {i // p i}` can appear twice with
 different `Decidable` instances; the terms print identically but are distinct atoms, so
 `linarith` fails on what looks like trivial arithmetic. Capture the count from the goal
