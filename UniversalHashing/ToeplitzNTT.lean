@@ -5,6 +5,7 @@ Authors: Adomas Baliuka
 -/
 module
 
+public import Mathlib.Data.FinEnum
 public import UniversalHashing.Basic
 public import UniversalHashing.Toeplitz
 public import UniversalHashing.BinConvolution.ConvolutionDefs
@@ -53,6 +54,8 @@ Main results:
 * `toeplitzHashNTT_eq_fast` (`@[csimp]`): the bare-constant form of that equality,
   which instructs the compiler to run `toeplitzHashNTTFast` wherever compiled code
   calls `toeplitzHashNTT` — kernel-checked, unlike `@[implemented_by]`.
+* `toeplitzHashNTT.universal2`: the executable `BitVec` family is universal₂, inherited
+  from `toeplitzHash.universal2` through the bijection `bitVecEquivZMod2Fun`.
 
 `Tests/ToeplitzNTT.lean` additionally checks `toeplitzHashNTT`
 (running the fast implementation via the `@[csimp]` replacement)
@@ -423,5 +426,82 @@ theorem toeplitzHashNTTFast_eq_toeplitzHash (m n : ℕ) [NeZero m] [NeZero n]
       = toeplitzHash m n (BitVec.toZMod2Fun param) (BitVec.toZMod2Fun x) := by
   rw [toeplitzHashNTTFast_eq]
   exact toeplitzHashNTT_eq_toeplitzHash m n hL param x
+
+/-! ## Universality
+
+`toeplitzHash` is universal₂, and `toeplitzHashNTT` computes it, so the executable
+`BitVec` family is universal₂ too. Obtained through bijection
+`BitVec w ≃ (Fin w → ZMod 2)` given by `BitVec.toZMod2Fun`.
+
+Perfect **Δ**-universality (`toeplitzHash.deltaUniversal2`) is deliberately
+*not* restated for the executable version since `BitVec m` uses arithmetic mod `2 ^ m`, not
+bitwise XOR. Those groups are not isomorphic, so the Δ-statements would also not be equivalent.
+-/
+
+/-- `BitVec w` and `Fin w → ZMod 2` are equivalent, via `BitVec.toZMod2Fun`. -/
+def bitVecEquivZMod2Fun (w : ℕ) : BitVec w ≃ (Fin w → ZMod 2) where
+  toFun := BitVec.toZMod2Fun
+  invFun f := BitVec.ofFnLE fun i ↦ decide (f i = 1)
+  left_inv v := by
+    apply BitVec.eq_of_getLsbD_eq
+    intro i hi
+    rw [BitVec.getLsbD_ofFnLE, dif_pos hi]
+    have hg : BitVec.toZMod2Fun v ⟨i, hi⟩
+        = if v.getLsbD i then (1 : ZMod 2) else 0 := rfl
+    rw [hg]
+    cases h : v.getLsbD i <;> simp
+  right_inv f := by
+    funext i
+    have hg : BitVec.toZMod2Fun (BitVec.ofFnLE fun j ↦ decide (f j = 1)) i
+        = if (BitVec.ofFnLE fun j ↦ decide (f j = 1)).getLsb i then (1 : ZMod 2) else 0 := rfl
+    rw [hg, BitVec.getLsb_ofFnLE]
+    have : ∀ a : ZMod 2, (if (decide (a = 1) = true) then (1 : ZMod 2) else 0) = a := by decide
+    exact this (f i)
+
+/-- `BitVec w` is a finite type, with `2 ^ w` elements. The `Fintype` instance comes from
+Mathlib's `FinEnum (BitVec n)` (`Mathlib.Data.FinEnum`) via the generic
+`[FinEnum α] → Fintype α`; that is why this file imports `Mathlib.Data.FinEnum`, which
+nothing else here pulls in. Do not add a local `Fintype (BitVec w)` instance: a second,
+non-defeq instance makes `Fintype.card (BitVec w)` two distinct atoms in the same goal. -/
+lemma card_bitVec_eq (w : ℕ) :
+    Fintype.card (BitVec w) = Fintype.card (Fin w → ZMod 2) :=
+  Fintype.card_congr (bitVecEquivZMod2Fun w)
+
+/--
+**The NTT-based Toeplitz hash is universal₂.** On the domain where the NTT convolution
+is proven correct (`m + n - 1 < 2 ^ 29`), the executable `BitVec` family
+`toeplitzHashNTT` inherits universality from `toeplitzHash.universal2`.
+
+Because compiled calls to `toeplitzHashNTT` run `toeplitzHashNTTFast` (`@[csimp]`), this
+hash family definition is both (reasonably quickly) executable and provably universal.
+-/
+theorem toeplitzHashNTT.universal2 (m n : ℕ) [NeZero m] [NeZero n]
+    (hL : m + n - 1 < 2 ^ 29) :
+    (toeplitzHashNTT m n).universal2 := by
+  have hinj : Function.Injective (BitVec.toZMod2Fun (w := m)) :=
+    (bitVecEquivZMod2Fun m).injective
+  rw [HashFamily.universal2_iff_probUniform]
+  intro x y hxy
+  have hxy' : BitVec.toZMod2Fun x ≠ BitVec.toZMod2Fun y :=
+    fun h ↦ hxy ((bitVecEquivZMod2Fun n).injective h)
+  have hpred : ∀ s : BitVec (m + n - 1),
+      (toeplitzHashNTT m n s x = toeplitzHashNTT m n s y)
+        ↔ (toeplitzHash m n (BitVec.toZMod2Fun s) (BitVec.toZMod2Fun x)
+            = toeplitzHash m n (BitVec.toZMod2Fun s) (BitVec.toZMod2Fun y)) := by
+    intro s
+    rw [← toeplitzHashNTT_eq_toeplitzHash m n hL s x,
+      ← toeplitzHashNTT_eq_toeplitzHash m n hL s y]
+    exact ⟨fun h ↦ by rw [h], fun h ↦ hinj h⟩
+  have key : probUniform (fun s : BitVec (m + n - 1) ↦
+        toeplitzHashNTT m n s x = toeplitzHashNTT m n s y)
+      = probUniform (fun t : Fin (m + n - 1) → ZMod 2 ↦
+        toeplitzHash m n t (BitVec.toZMod2Fun x)
+          = toeplitzHash m n t (BitVec.toZMod2Fun y)) := by
+    rw [← probUniform_comp_equiv (bitVecEquivZMod2Fun (m + n - 1))
+      (fun t ↦ toeplitzHash m n t (BitVec.toZMod2Fun x)
+        = toeplitzHash m n t (BitVec.toZMod2Fun y))]
+    exact probUniform_congr hpred
+  rw [key, card_bitVec_eq m]
+  exact (HashFamily.universal2_iff_probUniform _).mp (toeplitzHash.universal2 m n) hxy'
 
 end
