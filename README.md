@@ -41,8 +41,9 @@ See [Preliminary, auto-generated API-docs](https://adomasbaliuka.github.io/forma
   + [x] `mx + n mod p` (where `m n : ZMod p` for a prime `p`) is universal-2.
     (this is family $H_1$ from [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8))
 - [ ] Implementations 
-  + [ ] number-theoretic-transform-based fast binary Toeplitz matrix-vector multiplication
-  + [ ] `mx + n mod p` using Schönhage–Strassen algorithm
+  + [x] number-theoretic-transform-based fast binary Toeplitz matrix-vector multiplication 
+        (`n` bits to `m` bits, only implemented for `m + n - 1 < 2 ^ 29`)
+  + [ ] `mx + n mod p` using Schönhage–Strassen algorithm (maybe no need, can just use native `Nat`, which uses GMP?)
 
 # Acknowledgements
 
