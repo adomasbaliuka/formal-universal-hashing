@@ -27,7 +27,7 @@ See [Preliminary, auto-generated API-docs](https://adomasbaliuka.github.io/forma
 # Roadmap
 
 - [ ] Definitions of universal hashing
-  + [x] Universal-2 (e.g. [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8))
+  + [x] Universal-2 (e.g. [Carter, Wegman 1979](https://doi.org/10.1016/0022-0000(79)90044-8))
   + [x] Strongly-universal
   + [x] Strongly-universal-n (e.g. [Wegman, Carter 1981](https://doi.org/10.1016/0022-0000(81)90033-7))
   + [x] ε-almost universal-2
@@ -38,8 +38,8 @@ See [Preliminary, auto-generated API-docs](https://adomasbaliuka.github.io/forma
   + [x] "all functions" is universal-2 (toy example)
   + [x] "matrix-vector multiplication mod 2 using all binary matrices" is universal-2 (toy example)
   + [x] "matrix-vector multiplication mod 2 using binary [Toeplitz matrices](https://en.wikipedia.org/wiki/Toeplitz_matrix)" is universal-2
-  + [x] `mx + n mod p` (where `m n : ZMod p` for a prime `p`) is universal-2.
-    (this is family $H_1$ from [Wegman, Carter 1979](https://doi.org/10.1016/0022-0000(79)90044-8))
+  + [x] `mx + n mod p` (for prime `p` and `m, n < p` ) is universal-2.
+    (a version of family $H_1$ from [Carter, Wegman 1979](https://doi.org/10.1016/0022-0000(79)90044-8))
 - [ ] Implementations 
   + [x] number-theoretic-transform-based fast binary Toeplitz matrix-vector multiplication 
         (`n` bits to `m` bits, only implemented for `m + n - 1 < 2 ^ 29`)
