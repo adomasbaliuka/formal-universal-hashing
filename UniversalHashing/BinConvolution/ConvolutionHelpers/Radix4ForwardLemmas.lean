@@ -154,7 +154,7 @@ lemma radix2Pass_get_lo {n : ℕ} (k i : ℕ)
     · by_cases hpi' : i = p
       · unfold radix2Pass
         rw [radix2Pass_preserves]
-        · split_ifs <;> simp_all [Vector.get]
+        · split_ifs <;> simp_all [Vector.get_eq_getElem]
         · omega
       · specialize ih (i + 1)
             (if h1 : 2 * i < n then
@@ -188,7 +188,7 @@ lemma radix2Pass_get_hi {n : ℕ} (k i : ℕ)
     · rw [radix2Pass]
       split_ifs <;> simp_all only []
       · rw [radix2Pass_preserves]
-        · simp [Vector.get]
+        · simp [Vector.get_eq_getElem]
         · omega
       · omega
       · omega

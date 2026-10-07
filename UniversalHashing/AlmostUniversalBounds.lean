@@ -435,7 +435,7 @@ private lemma total_collision_count_eq [DecidableEq Input]
       simp [Finset.sum_ite, Finset.filter_ne, eq_comm, Finset.filter_erase]
     simp_all only [Finset.sum_boole, ne_eq, ite_not, Finset.sum_ite, Finset.sum_const_zero,
       Finset.filter_ne, Finset.sum_const, Finset.card_erase_of_mem, nsmul_eq_mul, mul_one, zero_add,
-      Set.coe_setOf, Fintype.card_subtype]
+      Set.coe_ofPred, Fintype.card_subtype]
     exact Finset.sum_congr rfl fun x _ => by
       cases Finset.card (Finset.filter (fun y => H s y = x) Finset.univ) <;> simp
   rw [← Finset.sum_congr rfl fun s _ => h_per_seed s, Finset.sum_comm,
@@ -468,7 +468,7 @@ theorem HashFamily.exists_collision_lb
       (c x y : ℚ) < εN * (Fintype.card Seed) := by
     rw [← div_lt_iff₀ (Nat.cast_pos.mpr <| Fintype.card_pos_iff.mpr ⟨Classical.arbitrary Seed⟩)]
     exact h_contra x y (Ne.symm (Finset.ne_of_mem_erase hy))
-  haveI : Nonempty Input := Fintype.card_pos_iff.mp (by omega)
+  have : Nonempty Input := Fintype.card_pos_iff.mp (by omega)
   have hOutPos : Fintype.card Output > 0 :=
     Fintype.card_pos_iff.mpr ⟨H (Classical.arbitrary Seed) (Classical.arbitrary Input)⟩
   have h_per_x (x : Input) :

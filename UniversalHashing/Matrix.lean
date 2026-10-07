@@ -129,7 +129,7 @@ theorem mulVecMat_ZModp_card_ker {p : ℕ} [Fact p.Prime] (m : ℕ) {n : ℕ} (v
    exact (fun a ↦ card_in_range_eq_card_ker p m n v x a)
      <| (Finset.mem_image.mp hx |> fun ⟨M, _, hM⟩ ↦ hM ▸ Set.mem_range_self M)
   rw [← h_orbit_stabilizer, this]
-  simp only [Set.coe_setOf, Fintype.card_ofFinset, mul_comm, Finset.sum_const, smul_eq_mul,
+  simp only [Set.coe_ofPred, Fintype.card_ofFinset, mul_comm, Finset.sum_const, smul_eq_mul,
     mul_eq_mul_right_iff]
   exact Or.inl (congr_arg Finset.card <| by ext; simp [Function.comp])
 
@@ -141,7 +141,7 @@ theorem card_ker_pow_dim {p : ℕ} [Fact p.Prime] (a : ℕ) {b : ℕ} {v : Fin b
       from mulVecMat_surjective (Fin a) hv)
   rcases b with (_ | b)
   · simp_all
-  · simp_all only [ne_eq, Fintype.card_setUniv, Set.coe_setOf, Fintype.card_pi, ZMod.card,
+  · simp_all only [ne_eq, Fintype.card_setUniv, Set.coe_ofPred, Fintype.card_pi, ZMod.card,
       Finset.prod_const, Finset.card_univ, Fintype.card_fin, add_tsub_cancel_right]
     have card_vec : Fintype.card (Fin a → ZMod p) = p ^ a := by simp_all only [Fintype.card_pi,
       ZMod.card, Finset.prod_const, Finset.card_univ, Fintype.card_fin]

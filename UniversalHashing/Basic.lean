@@ -75,7 +75,7 @@ def HashFamily.universal2 (hash : HashFamily Seed Input Output) : Prop :=
 theorem HashFamily.universal2_of_seed_empty (hash : HashFamily Seed Input Output) [IsEmpty Seed] :
     hash.universal2 := by
   unfold HashFamily.universal2
-  simp_all only [ne_eq, Set.coe_setOf, Fintype.card_eq_zero, zero_mul, le_refl, implies_true]
+  simp_all only [ne_eq, Set.coe_ofPred, Fintype.card_eq_zero, zero_mul, le_refl, implies_true]
 
 /-- The uniform probability of a predicate on `Seed`, modeled by counting. -/
 def probUniform (p : Seed → Prop) [DecidablePred p] : ℚ :=
@@ -465,7 +465,7 @@ theorem HashFamily.universal2_of_comp_injective_seed (H : HashFamily Seed Input 
   constructor
   · intro h x y hxy
     convert h hxy using 1
-    simp only [Function.comp_apply, Set.coe_setOf, Fintype.card_subtype, mul_eq_mul_right_iff]
+    simp only [Function.comp_apply, Set.coe_ofPred, Fintype.card_subtype, mul_eq_mul_right_iff]
     rw [Finset.card_filter, Finset.card_filter]
     exact Or.inl (Equiv.sum_comp (Equiv.ofBijective f
       ⟨hf, Finite.injective_iff_surjective.mp hf⟩) fun i ↦ if H i x = H i y then 1 else 0)
@@ -474,8 +474,7 @@ theorem HashFamily.universal2_of_comp_injective_seed (H : HashFamily Seed Input 
     rw [Fintype.card_subtype, Fintype.card_subtype]
     rw [Finset.card_filter, Finset.card_filter]
     rw [← Equiv.sum_comp (Equiv.ofBijective f ⟨hf, Finite.injective_iff_surjective.mp hf⟩)]
-    simp_all only [Equiv.ofBijective_apply, Set.mem_setOf_eq, Function.comp_apply,
-      mul_eq_mul_right_iff]
+    simp_all only [Set.mem_ofPred_eq, Function.comp_apply, mul_eq_mul_right_iff]
     exact Or.inl rfl
 
 theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
@@ -491,7 +490,7 @@ theorem HashFamily.universal2_of_comp_bijective {Seed2 : Type*} [Fintype Seed2]
         fun a ↦ by obtain ⟨s, hs⟩ := hf.2 a; aesop⟩)
   constructor <;> intro h x y hxy <;> have := h hxy
     <;> simp_all only [Multiset.bijective_iff_map_univ_eq_univ, ne_eq, Function.comp_apply,
-      Set.coe_setOf, Fintype.card_subtype, not_false_eq_true, ge_iff_le]
+      Set.coe_ofPred, Fintype.card_subtype, not_false_eq_true, ge_iff_le]
     <;> replace hf := congr_arg Multiset.card hf
     <;> aesop
 

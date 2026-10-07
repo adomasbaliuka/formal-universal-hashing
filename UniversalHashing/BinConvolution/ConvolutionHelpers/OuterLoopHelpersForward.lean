@@ -32,7 +32,7 @@ lemma radix4Middle_advances_inv {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
     let s := len >>> 1
     outerLoop_inv n (q + 2) hq2 hm_eq v
       (radix4Middle false roots s.toNat len.toNat (m / (2 * len.toNat)) 0 a) := by
-  haveI hp : Fact (Nat.Prime mod32.toNat) := ⟨prime_3221225473⟩
+  have hp : Fact (Nat.Prime mod32.toNat) := ⟨prime_3221225473⟩
   constructor
   · -- Boundedness: the output stays within mod32
     exact radix4Middle_bound false roots (len >>> 1).toNat len.toNat _ 0 a hinv.1
@@ -152,7 +152,7 @@ lemma outerLoop_from_inv {m : ℕ} (n q : ℕ)
         ref_ntt n ω
           (fun j : Fin (2 ^ n) => ((toMont (v[Fin.cast hm_eq.symm j])).toNat : ZMod mod32.toNat))
           (Fin.cast hm_eq k) := by
-  haveI hp : Fact (Nat.Prime mod32.toNat) := ⟨prime_3221225473⟩
+  have hp : Fact (Nat.Prime mod32.toNat) := ⟨prime_3221225473⟩
   simp only
   intro k
   induction fuel generalizing q a len with

@@ -71,8 +71,8 @@ theorem linearHashFamily.universal2 :
   have h_set : {i : LinearIndex p | linearHashFamily p i x = linearHashFamily p i y}
         = {i : LinearIndex p | i.val.1 * (x - y) = 0} := by
     simp [mul_sub, sub_eq_zero, linearHashFamily]
-  simp_all only [ne_eq, mul_eq_zero, sub_eq_zero, or_false, Set.ext_iff, Set.mem_setOf_eq,
-    Subtype.forall, iff_false, Prod.forall, Set.setOf_false, Fintype.card_eq_zero, ZMod.card,
+  simp_all only [ne_eq, mul_eq_zero, sub_eq_zero, or_false, Set.ext_iff, Set.mem_ofPred_eq,
+    Subtype.forall, iff_false, Prod.forall, Set.ofPred_false, Fintype.card_eq_zero, ZMod.card,
     zero_mul, Fintype.card_subtype_compl, Fintype.card_prod, zero_le]
 
 /-- Universality of the `generalLinearHashFamily`, where inputs can be restricted. -/

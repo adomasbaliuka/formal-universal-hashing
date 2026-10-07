@@ -64,8 +64,7 @@ theorem toeplitzModp_mulVec_deltaUniversal2 (m n p : ℕ) [NeZero m] [NeZero n]
     obtain ⟨M, hM⟩ := toeplitz_mulVec_surjective (sub_ne_zero_of_ne hxy) c
     rw [Finset.card_filter, Finset.card_filter]
     apply Finset.sum_bij (fun M' _ ↦ ⟨M'.val - M.val, toeplitzSub M' M⟩)
-    · intros
-      simp_all only [ne_eq, Finset.mem_univ]
+    · exact fun _ _ ↦ Finset.mem_univ _
     · simp only [Finset.mem_univ, forall_const]
       intro _ _ h
       apply Subtype.ext
@@ -75,7 +74,7 @@ theorem toeplitzModp_mulVec_deltaUniversal2 (m n p : ℕ) [NeZero m] [NeZero n]
         intro i i' j j' hij
         simp_all only [ne_eq, Matrix.IsToeplitz, Finset.mem_univ, Matrix.add_apply]
         apply congr_arg₂ (· + ·) (b'.2 (by aesop)) (M.2 (by aesop))⟩
-      aesop
+      exact ⟨Finset.mem_univ _, by aesop⟩
     · simp_all [sub_eq_iff_eq_add, Matrix.sub_mulVec]
   -- Summing the fibers over all values covers the whole seed space.
   have h_total :
@@ -112,7 +111,7 @@ theorem toeplitzModp_mulVec_isUniversal2 (m n p : ℕ) [NeZero m] [NeZero n]
     [Fact (Nat.Prime p)] :
     HashFamily.universal2
       (fun (M : ToeplitzMatrix m n (ZMod p)) (v : Fin n → ZMod p) ↦ M.val.mulVec v) := by
-  haveI : Nonempty (ToeplitzMatrix m n (ZMod p)) := ⟨ToeplitzMatrix.from_params 0⟩
+  have : Nonempty (ToeplitzMatrix m n (ZMod p)) := ⟨ToeplitzMatrix.from_params 0⟩
   rw [HashFamily.universal2_iff_probUniform]
   exact HashFamily.almostUniversal2_of_almostDeltaUniversal2 _
     (HashFamily.almostDeltaUniversal2_of_deltaUniversal2 _

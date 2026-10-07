@@ -154,7 +154,7 @@ private lemma radix4Inner_case_split {m : ℕ} (q b : ℕ) (r : Fin (2 ^ (q + 2)
     ((radix4Inner false roots s.toNat len.toNat i2.toNat s.toNat
           0 a)[b * 2 ^ (q + 2) + r.val]'hidx).toNat =
       ref_ntt (q + 2) ω_top f_ntt r := by
-  haveI := hp
+  have := hp
   interval_cases quad
   · -- quad = 0: idx-position is (i2 + j2u).toNat = b*2^(q+2) + j2nat
     have hidx_eq : b * 2 ^ (q + 2) + r.val = (i2 + j2u).toNat := by
@@ -267,7 +267,7 @@ lemma radix4Inner_single_block_correct {m : ℕ} (n q : ℕ) (hq2 : q + 2 ≤ n)
         (ntt_sub_input n (q + 2) hq2 hm_eq v b) r := by
   simp only
   -- Make the prime fact explicit to avoid repeated instance search for ZMod field operations
-  haveI hp : Fact (Nat.Prime mod32.toNat) := ⟨prime_3221225473⟩
+  have hp : Fact (Nat.Prime mod32.toNat) := ⟨prime_3221225473⟩
   -- Setup basic parameters (mirrors radix4Middle_advances_inv)
   have hn64 : n < 64 := n_lt_64_of_pow2_nat m n hm_eq hm_dvd
   have hs_eq : (len >>> 1).toNat = 2 ^ q := by
