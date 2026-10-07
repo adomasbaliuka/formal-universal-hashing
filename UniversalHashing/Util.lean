@@ -89,7 +89,7 @@ section FiberCard
 This is the Fintype version of `Finset.card_eq_sum_card_fiberwise` over the full universe. -/
 lemma sum_fiber_card {α β : Type*} [Fintype α] [Fintype β] [DecidableEq β]
     (f : α → β) : ∑ b : β, Fintype.card {a : α | f a = b} = Fintype.card α := by
-  simp_rw [Fintype.card_subtype, Set.mem_setOf_eq, Finset.card_filter]
+  simp_rw [Fintype.card_subtype, Set.mem_ofPred_eq, Finset.card_filter]
   rw [Finset.sum_comm]
   simp [eq_comm]
 

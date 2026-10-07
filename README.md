@@ -49,6 +49,8 @@ See [Preliminary, auto-generated API-docs](https://adomasbaliuka.github.io/forma
 
 Many thanks to the [Mathlib](https://mathlib.org/) community for developing the LEAN4 mathematics library which serves as a foundation for this project.
 
+Thanks to b-mehta and others for [PrimeCert](https://github.com/b-mehta/PrimeCert), which we use here to prove things about large prime numbers.
+
 Thanks to [Harmonic](https://aristotle.harmonic.fun) for free API access to their proving tools.
 
 # AI Use

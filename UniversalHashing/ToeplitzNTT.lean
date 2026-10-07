@@ -156,7 +156,7 @@ theorem toeplitzHashNTT_eq_toeplitzHash (m n : ℕ) [NeZero m] [NeZero n]
       = toeplitzHash m n (BitVec.toZMod2Fun param) (BitVec.toZMod2Fun x) := by
   have hm := NeZero.ne m
   have hn := NeZero.ne n
-  haveI : NeZero (m + n - 1) := ⟨by omega⟩
+  have : NeZero (m + n - 1) := ⟨by omega⟩
   funext i
   have hiL : i.val < m + n - 1 := by omega
   unfold toeplitzHashNTT

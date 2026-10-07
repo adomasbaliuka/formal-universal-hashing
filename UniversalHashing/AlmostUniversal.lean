@@ -123,7 +123,7 @@ theorem HashFamily.stronglyUniversal2_iff_almostStronglyUniversal2
     rw_mod_cast [← Finset.sum_product']
     simp only [Finset.card_filter]
     rw [Finset.sum_comm]
-    simp only [Finset.univ_product_univ, Set.mem_setOf_eq, Finset.sum_boole, Nat.cast_id]
+    simp only [Finset.univ_product_univ, Set.mem_ofPred_eq, Finset.sum_boole, Nat.cast_id]
     rw [Finset.sum_congr rfl fun s _ =>
       Finset.card_eq_one.mpr ⟨(H s x, H s y), by aesop⟩]
     simp
@@ -132,7 +132,7 @@ theorem HashFamily.stronglyUniversal2_iff_almostStronglyUniversal2
       (Fintype.card Seed) / (Fintype.card Output)^2 := by
     intro a b
     specialize h hxy a b
-    simp_all only [ne_eq, Set.coe_setOf, probUniform, one_div]
+    simp_all only [ne_eq, Set.coe_ofPred, probUniform, one_div]
     rw [div_le_iff₀ (Nat.cast_pos.mpr <| Fintype.card_pos)] at h
     exact h.trans_eq (by ring)
   contrapose! h_sum
@@ -144,7 +144,7 @@ theorem HashFamily.stronglyUniversal2_iff_almostStronglyUniversal2
   · simp only [sq, div_eq_mul_inv, mul_inv_rev, mul_left_comm,
         Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
     by_cases hcard : Fintype.card Output = 0
-    · haveI : Nonempty Output := ⟨a⟩; exact absurd hcard Fintype.card_ne_zero
+    · have : Nonempty Output := ⟨a⟩; exact absurd hcard Fintype.card_ne_zero
     · field_simp [show (Fintype.card Output : ℚ) ≠ 0 from Nat.cast_ne_zero.mpr hcard]
 
 theorem HashFamily.uniform_of_stronglyUniversal2
@@ -161,7 +161,7 @@ theorem HashFamily.uniform_of_stronglyUniversal2
        fun ⟨_, _, _, rfl⟩ => rfl, fun _ => rfl⟩
   have h_eq : Fintype.card {s : Seed // H s x = a} =
       (Fintype.card Seed : ℚ) / Fintype.card Output := by
-    haveI : Nonempty Output := ⟨a⟩
+    have : Nonempty Output := ⟨a⟩
     have : ∀ b : Output, Fintype.card {s : Seed // H s x = a ∧ H s y = b} =
         (Fintype.card Seed : ℚ) / ((Fintype.card Output) ^ 2 : ℚ) :=
       fun b ↦ hsu (Ne.symm hy) a b
@@ -181,7 +181,7 @@ theorem HashFamily.almostStronglyUniversal2_eps_lower_bound
     simp only [Fintype.card_eq_sum_ones, Finset.sum_sigma']
     refine Finset.sum_bij (fun s _ ↦ s.2.2) (by simp) ?_
       (by intro b _; exact ⟨⟨H b x, H b y, ⟨b, rfl, rfl⟩⟩, Finset.mem_univ _, rfl⟩) (by simp)
-    simp only [Set.coe_setOf, Set.mem_setOf_eq]
+    simp only [Set.coe_ofPred, Set.mem_ofPred_eq]
     aesop
   have h_sum_le : ∑ a : Output, ∑ b : Output,
       (Fintype.card {s : Seed | H s x = a ∧ H s y = b}) ≤
@@ -191,7 +191,7 @@ theorem HashFamily.almostStronglyUniversal2_eps_lower_bound
         (ε / Fintype.card Output) * Fintype.card Seed := by
       intro a b
       have := h hxy a b
-      simp_all only [ne_eq, Set.coe_setOf, probUniform, ge_iff_le]
+      simp_all only [ne_eq, Set.coe_ofPred, probUniform, ge_iff_le]
       rwa [div_le_iff₀ (Nat.cast_pos.mpr <| Fintype.card_pos)] at this
     push_cast [sq, mul_assoc]
     exact le_trans

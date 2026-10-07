@@ -11,10 +11,18 @@ autoImplicit = false
 weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
 
+# PrimeCert certifies the NTT modulus prime (`prime_3221225473`). Pinned to a master commit:
+# it must agree with the Mathlib version below (that commit pins Mathlib `v4.33.0`).
+# Required *before* Mathlib so that Mathlib's transitive dependency versions take precedence.
+[[require]]
+name = "PrimeCert"
+git = "https://github.com/b-mehta/PrimeCert.git"
+rev = "0803c2f6bd289c09704c7d352bb8fcf770cbb9b2"
+
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4.git"
-rev = "v4.32.0"
+rev = "v4.33.0"
 
 [[lean_lib]]
 name = "UniversalHashing"
